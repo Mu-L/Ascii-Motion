@@ -439,15 +439,13 @@ export function ProjectsDialog({
                       ) : (
                         <>
                           <div className="flex-1">
-                            <CardTitle 
-                              className="text-base cursor-pointer hover:text-primary transition-colors line-clamp-3"
-                              onClick={() => handleRenameStart(project)}
+                            <CardTitle
                               title="Click to rename"
                             >
                               {project.name}
                             </CardTitle>
                             <CardDescription>
-                              {project.sessionData.animation.frames.length} frame{project.sessionData.animation.frames.length !== 1 ? 's' : ''}
+                              {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                             </CardDescription>
                           </div>
                           <DropdownMenu>
@@ -591,7 +589,7 @@ export function ProjectsDialog({
                                     {project.name}
                                   </CardTitle>
                                   <CardDescription>
-                                    {project.sessionData.animation.frames.length} frame{project.sessionData.animation.frames.length !== 1 ? 's' : ''}
+                                    {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                                   </CardDescription>
                                 </div>
                               </div>
