@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { CanvasProvider, useCanvasContext } from './contexts/CanvasContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { AuthProvider } from '@ascii-motion/premium'
+import { AuthProvider, useCloudProject } from '@ascii-motion/premium'
 import { ThemeToggle } from './components/common/ThemeToggle'
 import { AccountButton } from './components/features/AccountButton'
 import { HamburgerMenu } from './components/features/HamburgerMenu'
@@ -35,6 +35,7 @@ function AppContent() {
   
   // Cloud storage state and actions
   const { user } = useAuth()
+  const { loadFromCloud } = useCloudProject()
   const { 
     showSaveToCloudDialog, 
     showProjectsDialog,
@@ -58,6 +59,44 @@ function AppContent() {
     },
     [loadFromCloudBase, setFontSize, setCharacterSpacing, setLineSpacing, setSelectedFontId]
   );
+
+  // Handle URL parameters for remix flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const projectId = params.get('project')
+    const isRemix = params.get('remix') === 'true'
+    const manageProjects = params.get('manage-projects') === 'true'
+
+    // Open "My Projects" dialog if requested
+    if (manageProjects && user) {
+      setShowProjectsDialog(true)
+      // Clean up URL
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+      return
+    }
+
+    // Auto-load project if specified
+    if (projectId && user && isRemix) {
+      // Fetch project data then load it
+      const loadRemixedProject = async () => {
+        try {
+          const cloudProject = await loadFromCloud(projectId)
+          if (cloudProject) {
+            await handleLoadFromCloud(projectId, cloudProject.sessionData)
+          }
+        } catch (error) {
+          console.error('Failed to load remixed project:', error)
+        } finally {
+          // Clean up URL
+          const newUrl = window.location.pathname
+          window.history.replaceState({}, '', newUrl)
+        }
+      }
+      
+      loadRemixedProject()
+    }
+  }, [user, handleLoadFromCloud, loadFromCloud, setShowProjectsDialog])
 
   // Password recovery callback detection
   const { isRecovery, resetRecovery } = usePasswordRecoveryCallback()

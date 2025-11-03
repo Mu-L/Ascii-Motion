@@ -73,6 +73,15 @@ export const useWelcomeDialog = () => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
+    // Check URL parameters - skip welcome if this is a remix
+    const params = new URLSearchParams(window.location.search)
+    const isRemix = params.get('remix') === 'true'
+    
+    if (isRemix) {
+      // Don't show welcome dialog for remix flow
+      return
+    }
+    
     // Check if we should show the welcome dialog
     if (shouldShowWelcome()) {
       // Delay showing by 500ms for smooth page load
