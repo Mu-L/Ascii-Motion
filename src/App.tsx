@@ -47,7 +47,7 @@ import { SaveToCloudDialog } from './components/features/SaveToCloudDialog'
 import { ProjectsDialog } from './components/features/ProjectsDialog'
 import { useCloudDialogState } from './hooks/useCloudDialogState'
 import { useCloudProjectActions } from './hooks/useCloudProjectActions'
-import { useAuth, usePasswordRecoveryCallback, UpdatePasswordDialog } from '@ascii-motion/premium'
+import { useAuth, usePasswordRecoveryCallback, UpdatePasswordDialog, CommunityGalleryPage } from '@ascii-motion/premium'
 import { InlineProjectNameEditor } from './components/features/InlineProjectNameEditor'
 import { NewProjectDialog } from './components/features/NewProjectDialog'
 import { ProjectSettingsDialog } from './components/features/ProjectSettingsDialog'
@@ -56,6 +56,7 @@ import { Toaster } from './components/ui/sonner'
 import { WelcomeDialog } from './components/features/WelcomeDialog'
 import { MobileDialog } from './components/features/MobileDialog'
 import { BrushSizePreviewOverlay } from './components/features/BrushSizePreviewOverlay'
+import { PublishToGalleryDialogWrapper } from './components/features/PublishToGalleryDialogWrapper'
 
 /**
  * Inner component that uses auth hooks
@@ -98,6 +99,10 @@ function AppContent() {
   const { isRecovery, resetRecovery } = usePasswordRecoveryCallback()
   const [showUpdatePasswordDialog, setShowUpdatePasswordDialog] = useState(isRecovery)
 
+  // Gallery view state
+  const [showGallery, setShowGallery] = useState(false)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+
   // Update dialog visibility when recovery state changes
   useEffect(() => {
     setShowUpdatePasswordDialog(isRecovery)
@@ -112,12 +117,26 @@ function AppContent() {
 
   return (
     <div className="h-screen grid grid-rows-[auto_1fr] bg-background text-foreground">
+        {/* Gallery View - Full Screen Overlay */}
+        {showGallery && (
+          <CommunityGalleryPage
+            onClose={() => setShowGallery(false)}
+            onPublish={() => {
+              setShowGallery(false)
+              setShowPublishDialog(true)
+            }}
+          />
+        )}
+
         {/* Header - compact */}
         <header className="flex-shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="px-4 py-2">
             <div className="flex justify-between items-center">
               <div className="flex gap-3 relative items-center">
-                <HamburgerMenu />
+                <HamburgerMenu 
+                  onOpenGallery={() => setShowGallery(true)}
+                  onOpenPublish={() => setShowPublishDialog(true)}
+                />
                 <div
                   className="ascii-logo ascii-logo-selectable font-mono tracking-tighter whitespace-pre"
                   aria-label="ASCII Motion logo"
@@ -313,6 +332,16 @@ function AppContent() {
                 onOpenChange={setShowProjectsDialog}
                 onLoadProject={handleLoadFromCloud}
                 onDownloadProject={handleDownloadProject}
+              />
+              
+              {/* Publish to Gallery Dialog - Community feature */}
+              <PublishToGalleryDialogWrapper
+                isOpen={showPublishDialog}
+                onOpenChange={setShowPublishDialog}
+                onPublishSuccess={(projectId) => {
+                  console.log('Published project:', projectId)
+                  setShowPublishDialog(false)
+                }}
               />
             </>
           )}
