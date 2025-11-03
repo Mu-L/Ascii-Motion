@@ -130,6 +130,9 @@ export function useCloudProjectActions() {
       }
     ) => {
       try {
+        console.log('[CloudActions] Loading project, sessionData type:', typeof sessionData);
+        console.log('[CloudActions] sessionData sample:', sessionData);
+        
         // Create a blob from the session data
         const blob = new Blob([JSON.stringify(sessionData, null, 2)], {
           type: 'application/json',

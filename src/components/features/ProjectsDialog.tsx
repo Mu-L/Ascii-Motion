@@ -447,7 +447,7 @@ export function ProjectsDialog({
                               {project.name}
                             </CardTitle>
                             <CardDescription>
-                              {project.sessionData.animation.frames.length} frame{project.sessionData.animation.frames.length !== 1 ? 's' : ''}
+                              {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                             </CardDescription>
                           </div>
                           <DropdownMenu>
@@ -591,7 +591,7 @@ export function ProjectsDialog({
                                     {project.name}
                                   </CardTitle>
                                   <CardDescription>
-                                    {project.sessionData.animation.frames.length} frame{project.sessionData.animation.frames.length !== 1 ? 's' : ''}
+                                    {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                                   </CardDescription>
                                 </div>
                               </div>
