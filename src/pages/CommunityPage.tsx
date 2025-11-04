@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Routes, Route } from 'react-router-dom'
-import { CommunityGalleryPage, ProjectDetailPage } from '@ascii-motion/premium'
+import { useNavigate, useParams, Routes, Route } from 'react-router-dom'
+import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage } from '@ascii-motion/premium'
 
 /**
  * Community page route component
  * Wraps CommunityGalleryPage with navigation handlers
- * Supports nested routes for individual projects
+ * Supports nested routes for individual projects and user profiles
  */
 export function CommunityPage() {
   const navigate = useNavigate()
@@ -28,6 +28,14 @@ export function CommunityPage() {
         
         {/* Individual project detail view */}
         <Route path="project/:projectId" element={<ProjectDetailPage />} />
+        
+        {/* User profile view */}
+        <Route 
+          path="u/:username" 
+          element={
+            <UserProfilePageWrapper onClose={() => navigate('/community')} />
+          } 
+        />
       </Routes>
       
       {/* TODO: Add PublishToGalleryDialog here if needed */}
@@ -36,4 +44,28 @@ export function CommunityPage() {
       )}
     </>
   )
+}
+
+/**
+ * Wrapper component to extract username from route params
+ */
+function UserProfilePageWrapper({ onClose }: { onClose: () => void }) {
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  
+  if (!username) {
+    return null;
+  }
+  
+  const handleNavigateToProfile = (newUsername: string) => {
+    navigate(`/community/u/${newUsername}`);
+  };
+  
+  return (
+    <UserProfilePage 
+      username={username} 
+      onClose={onClose}
+      onNavigateToProfile={handleNavigateToProfile}
+    />
+  );
 }
