@@ -73,12 +73,13 @@ export const useWelcomeDialog = () => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
-    // Check URL parameters - skip welcome if this is a remix
+    // Check URL parameters - skip welcome if this is a remix or manage-projects flow
     const params = new URLSearchParams(window.location.search)
     const isRemix = params.get('remix') === 'true'
+    const manageProjects = params.get('manage-projects') === 'true'
     
-    if (isRemix) {
-      // Don't show welcome dialog for remix flow
+    if (isRemix || manageProjects) {
+      // Don't show welcome dialog for remix or manage-projects flow
       return
     }
     
