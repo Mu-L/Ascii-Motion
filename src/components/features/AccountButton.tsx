@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Crown, LogOut, Settings, User } from 'lucide-react';
+import { LogIn, Crown, LogOut, Settings, User, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -110,6 +110,8 @@ export function AccountButton() {
   const email = user.email || 'User';
   const firstLetter = email[0].toUpperCase();
   const tierName = profile?.subscription_tier?.display_name || 'Free Plan';
+  // @ts-ignore - display_name now comes from user_profiles_public join
+  const userDisplayName = profile?.display_name;
 
   return (
     <TooltipProvider>
@@ -142,6 +144,10 @@ export function AccountButton() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => userDisplayName && (window.location.href = `/community/u/${userDisplayName}`)}>
+            <UserCircle className="mr-2 h-4 w-4" />
+            <span>View Profile</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setShowProfileSettings(true)}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile Settings</span>

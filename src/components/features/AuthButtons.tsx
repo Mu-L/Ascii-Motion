@@ -35,6 +35,7 @@ export function AuthButtons() {
         <UserMenu 
           onManageProjects={() => setShowProjectsDialog(true)}
           onAccountSettings={() => setShowAccountSettings(true)}
+          onViewProfile={() => window.location.href = `/community/profile/${user.id}`}
         />
         <AccountSettingsDialog
           open={showAccountSettings}
