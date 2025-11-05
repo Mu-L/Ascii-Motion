@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom'
-import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage } from '@ascii-motion/premium'
+import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage, AdminModerationPanel } from '@ascii-motion/premium'
 
 /**
  * Community page route component
@@ -25,6 +25,9 @@ export function CommunityPage() {
             }}
           />
         } />
+        
+        {/* Admin moderation panel */}
+        <Route path="admin/moderation" element={<AdminModerationPanel />} />
         
         {/* Individual project detail view */}
         <Route path="project/:projectId" element={<ProjectDetailPage />} />
