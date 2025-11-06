@@ -71,15 +71,42 @@ const shouldShowWelcome = (): boolean => {
 export const useWelcomeDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
+    // Prevent double-checking in React Strict Mode
+    // Use state instead of ref so it can be reset properly
+    if (hasChecked) {
+      return;
+    }
+    
+    // Mark as checked immediately to prevent re-runs
+    setHasChecked(true);
     // Check URL parameters - skip welcome if this is a remix or manage-projects flow
     const params = new URLSearchParams(window.location.search)
     const isRemix = params.get('remix') === 'true'
     const manageProjects = params.get('manage-projects') === 'true'
     
     if (isRemix || manageProjects) {
-      // Don't show welcome dialog for remix or manage-projects flow
+      return
+    }
+    
+    // Check if user is coming from community gallery via sessionStorage
+    const fromCommunity = sessionStorage.getItem('from-community')
+    if (fromCommunity === 'true') {
+      // Clear the flag immediately now that we've seen it
+      sessionStorage.removeItem('from-community')
+      // Don't show welcome
+      return
+    }
+    
+    // Check if user is coming from internal navigation (e.g., community gallery)
+    // If the referrer is from the same origin and contains /community, skip welcome
+    const referrer = document.referrer
+    const currentOrigin = window.location.origin
+    
+    if (referrer && referrer.startsWith(currentOrigin) && referrer.includes('/community')) {
+      // User navigated from community gallery - don't show welcome
       return
     }
     
@@ -128,7 +155,9 @@ export const useWelcomeDialog = () => {
   const resetWelcomeState = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-      // Optionally show the dialog immediately
+      // Reset the checked flag so it can run again
+      setHasChecked(false);
+      // Show the dialog immediately
       setIsOpen(true);
     } catch (error) {
       console.error('Failed to reset welcome state:', error);

@@ -148,7 +148,13 @@ function AppContent() {
                   />
                 )}
                 <div
-                  onClick={() => navigate('/')}
+                  onClick={() => {
+                    // If on community route, mark that we're navigating from community
+                    if (isCommunityRoute) {
+                      sessionStorage.setItem('from-community', 'true');
+                    }
+                    navigate('/');
+                  }}
                   className="ascii-logo ascii-logo-selectable font-mono tracking-tighter whitespace-pre hover:opacity-80 transition-opacity cursor-pointer"
                   aria-label="ASCII Motion logo"
                 >
