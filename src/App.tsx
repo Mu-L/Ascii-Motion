@@ -1,6 +1,6 @@
 import './App.css'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { CanvasProvider, useCanvasContext } from './contexts/CanvasContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -179,6 +179,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<EditorPage />} />
           <Route path="/community/*" element={<CommunityPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         
         {/* Global Dialogs - Available on all routes */}
