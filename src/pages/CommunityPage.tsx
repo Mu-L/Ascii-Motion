@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams, Routes, Route } from 'react-router-dom'
+import { useNavigate, useParams, Routes, Route, Navigate } from 'react-router-dom'
 import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage, AdminModerationPanel } from '@ascii-motion/premium'
 
 /**
@@ -39,6 +39,9 @@ export function CommunityPage() {
             <UserProfilePageWrapper onClose={() => navigate('/community')} />
           } 
         />
+        
+        {/* Catch-all: redirect invalid community routes back to gallery */}
+        <Route path="*" element={<Navigate to="/community" replace />} />
       </Routes>
       
       {/* TODO: Add PublishToGalleryDialog here if needed */}
