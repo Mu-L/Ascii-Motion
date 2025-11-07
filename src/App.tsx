@@ -216,8 +216,8 @@ function AppContent() {
                     </Button>
                   </div>
                   
-                  {/* Center - Animated Gallery Text (slides in from bottom) */}
-                  <div className="flex-1 flex items-center justify-center overflow-hidden" style={{ height: '64px' }}>
+                  {/* Center - Animated Gallery Text (slides in from bottom) - Hidden below 1210px */}
+                  <div className="flex-1 items-center justify-center overflow-hidden min-w-0 hidden xl:flex" style={{ height: '64px' }}>
                     <div
                       className={`transition-all duration-300 ease-in-out ${
                         isGalleryTextVisible
@@ -228,6 +228,9 @@ function AppContent() {
                       <GalleryHeaderText autoPlay={true} />
                     </div>
                   </div>
+                  
+                  {/* Spacer - visible when animation is hidden */}
+                  <div className="flex-1 xl:hidden"></div>
                   
                   {/* Right side - Theme toggle + Account */}
                   <div className="flex items-center gap-2 flex-shrink-0">
