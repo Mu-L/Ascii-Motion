@@ -37,7 +37,7 @@ export const GalleryMobileMenu: React.FC = () => {
               className="cursor-pointer"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              <span>Go to App</span>
+              <span>Go to ASCII Motion App</span>
             </MenubarItem>
             
             <MenubarItem onClick={() => setShowAboutDialog(true)} className="cursor-pointer">
