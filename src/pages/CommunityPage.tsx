@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate, useParams, Routes, Route, Navigate } from 'react-router-dom'
 import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage, AdminModerationPanel } from '@ascii-motion/premium'
 
@@ -9,22 +8,11 @@ import { CommunityGalleryPage, ProjectDetailPage, UserProfilePage, AdminModerati
  */
 export function CommunityPage() {
   const navigate = useNavigate()
-  const [showPublishDialog, setShowPublishDialog] = useState(false)
 
   return (
-    <>
-      <Routes>
-        {/* Main gallery view */}
-        <Route index element={
-          <CommunityGalleryPage
-            onClose={() => navigate('/')}
-            onPublish={() => {
-              navigate('/')
-              // Small delay to ensure navigation completes before opening dialog
-              setTimeout(() => setShowPublishDialog(true), 100)
-            }}
-          />
-        } />
+    <Routes>
+      {/* Main gallery view */}
+      <Route index element={<CommunityGalleryPage />} />
         
         {/* Admin moderation panel */}
         <Route path="admin/moderation" element={<AdminModerationPanel />} />
@@ -40,19 +28,12 @@ export function CommunityPage() {
           } 
         />
         
-        {/* Catch-all: redirect invalid community routes back to gallery */}
-        <Route path="*" element={<Navigate to="/community" replace />} />
-      </Routes>
       
-      {/* TODO: Add PublishToGalleryDialog here if needed */}
-      {showPublishDialog && (
-        <div>Publish dialog placeholder</div>
-      )}
-    </>
+      {/* Catch-all: redirect invalid community routes back to gallery */}
+      <Route path="*" element={<Navigate to="/community" replace />} />
+    </Routes>
   )
-}
-
-/**
+}/**
  * Wrapper component to extract username from route params
  */
 function UserProfilePageWrapper({ onClose }: { onClose: () => void }) {
