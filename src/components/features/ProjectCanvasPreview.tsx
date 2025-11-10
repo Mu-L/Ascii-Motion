@@ -22,12 +22,17 @@ export const ProjectCanvasPreview: React.FC<ProjectCanvasPreviewProps> = ({
   height = 120,
 }) => {
   // Calculate width based on canvas aspect ratio
-  const canvasWidth = project.sessionData.canvas.width;
-  const canvasHeight = project.sessionData.canvas.height;
+  const canvasWidth = project.sessionData?.canvas?.width ?? 80;
+  const canvasHeight = project.sessionData?.canvas?.height ?? 24;
   const aspectRatio = canvasWidth / canvasHeight;
   const width = Math.round(height * aspectRatio);
 
   const previewDataUrl = useMemo(() => {
+    // Safety check for sessionData
+    if (!project.sessionData?.canvas || !project.sessionData?.animation?.frames) {
+      return null;
+    }
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -48,8 +53,8 @@ export const ProjectCanvasPreview: React.FC<ProjectCanvasPreviewProps> = ({
     ctx.fillStyle = canvasBgColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Get first frame data
-    const firstFrame = project.sessionData.animation.frames[0];
+    // Get first frame data with safety check
+    const firstFrame = project.sessionData.animation?.frames?.[0];
     if (!firstFrame || !firstFrame.data) {
       // If no frame data, show a subtle grid pattern
       ctx.strokeStyle = '#333333';

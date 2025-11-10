@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Crown, LogOut, Settings } from 'lucide-react';
+import { LogIn, Crown, LogOut, Settings, User, UserCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,16 +15,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useAuth, SignUpDialog, SignInDialog, PasswordResetDialog, AccountSettingsDialog } from '@ascii-motion/premium';
+import { useAuth, SignUpDialog, SignInDialog, PasswordResetDialog, AccountSettingsDialog, ProfileSettingsDialog, useAdminCheck } from '@ascii-motion/premium';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AccountButton() {
   const { user, profile, loading, signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   // Listen for custom event to open signup dialog
   useEffect(() => {
@@ -109,6 +111,8 @@ export function AccountButton() {
   const email = user.email || 'User';
   const firstLetter = email[0].toUpperCase();
   const tierName = profile?.subscription_tier?.display_name || 'Free Plan';
+  // @ts-expect-error - display_name now comes from user_profiles_public join
+  const userDisplayName = profile?.display_name;
 
   return (
     <TooltipProvider>
@@ -141,11 +145,31 @@ export function AccountButton() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => userDisplayName && (window.location.href = `/community/u/${userDisplayName}`)}>
+            <UserCircle className="mr-2 h-4 w-4" />
+            <span>View Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowProfileSettings(true)}>
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile Settings</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setShowAccountSettings(true)}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Account Settings</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          
+          {/* Admin Panel Link (only visible to admins) */}
+          {isAdmin && (
+            <>
+              <DropdownMenuItem onClick={() => window.location.href = '/community/admin/moderation'}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sign out</span>
@@ -162,6 +186,15 @@ export function AccountButton() {
         }}
         onAccountDeleted={() => {
           toast.success('Account deleted successfully');
+        }}
+      />
+
+      {/* Profile Settings Dialog */}
+      <ProfileSettingsDialog
+        open={showProfileSettings}
+        onOpenChange={setShowProfileSettings}
+        onSaved={() => {
+          toast.success('Profile updated successfully');
         }}
       />
     </TooltipProvider>

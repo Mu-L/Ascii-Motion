@@ -26,6 +26,7 @@ packages/*/.tsbuildinfo
 .env
 .env.local
 .env.production
+.env.preview
 .env.*.local
 
 # Internal security documentation (CRITICAL: Never commit!)

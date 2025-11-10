@@ -218,6 +218,10 @@ export const useExportDataCollector = (): ExportDataBundle => {
   const { theme } = useTheme();
 
   return {
+    // Top-level name and description (for convenience)
+    name: projectName,
+    description: projectDescription,
+    
     // Version metadata
     metadata: {
       version: VERSION,

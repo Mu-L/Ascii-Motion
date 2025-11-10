@@ -13,7 +13,7 @@
  * - This keeps UI components with shadcn/ui design system while logic stays in premium package
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCloudProject } from '@ascii-motion/premium';
 import type { CloudProject } from '@ascii-motion/premium';
 import {
@@ -72,6 +72,7 @@ interface ProjectsDialogProps {
   onOpenChange: (open: boolean) => void;
   onLoadProject: (projectId: string, sessionData: unknown) => Promise<void>;
   onDownloadProject: (projectId: string, projectName: string, sessionData: unknown) => void;
+  refreshTrigger?: number; // Trigger to refresh project list
 }
 
 export function ProjectsDialog({
@@ -79,6 +80,7 @@ export function ProjectsDialog({
   onOpenChange,
   onLoadProject,
   onDownloadProject,
+  refreshTrigger,
 }: ProjectsDialogProps) {
   const {
     loading,
@@ -106,13 +108,30 @@ export function ProjectsDialog({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  // Load projects when dialog opens
+  // Load projects list from database
+  const loadProjectsList = useCallback(async () => {
+    const [activeData, deletedData, profile] = await Promise.all([
+      listProjects(),
+      listDeletedProjects(),
+      getUserProfile(),
+    ]);
+    
+    // Sort active projects by most recently opened first
+    const sortedActive = activeData.sort((a, b) => 
+      new Date(b.lastOpenedAt).getTime() - new Date(a.lastOpenedAt).getTime()
+    );
+    
+    setProjects(sortedActive);
+    setDeletedProjects(deletedData);
+    setUserProfile(profile);
+  }, [listProjects, listDeletedProjects, getUserProfile]);
+
+  // Load projects when dialog opens OR when refreshTrigger changes
   useEffect(() => {
     if (open) {
       loadProjectsList();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, refreshTrigger, loadProjectsList]);
 
   // Reset dialog state when closed
   useEffect(() => {
@@ -134,23 +153,6 @@ export function ProjectsDialog({
     }
   }, [error]);
 
-  const loadProjectsList = async () => {
-    const [activeData, deletedData, profile] = await Promise.all([
-      listProjects(),
-      listDeletedProjects(),
-      getUserProfile(),
-    ]);
-    
-    // Sort active projects by most recently opened first
-    const sortedActive = activeData.sort((a, b) => 
-      new Date(b.lastOpenedAt).getTime() - new Date(a.lastOpenedAt).getTime()
-    );
-    
-    setProjects(sortedActive);
-    setDeletedProjects(deletedData);
-    setUserProfile(profile);
-  };
-
   // Check if user can create more projects
   const canCreateProject = () => {
     if (!userProfile?.subscriptionTier) return true; // Allow if no tier info
@@ -168,9 +170,9 @@ export function ProjectsDialog({
     };
   };
 
-  // Check if user is on pro tier
+  // Check if user is on pro tier or is an admin
   const isProUser = () => {
-    return userProfile?.subscriptionTier?.name === 'pro';
+    return userProfile?.subscriptionTier?.name === 'pro' || userProfile?.isAdmin === true;
   };
 
   const handleOpenProject = async (project: CloudProject) => {
@@ -439,11 +441,24 @@ export function ProjectsDialog({
                       ) : (
                         <>
                           <div className="flex-1">
-                            <CardTitle
-                              title="Click to rename"
-                            >
-                              {project.name}
-                            </CardTitle>
+                            <div className="flex items-center gap-2">
+                              <CardTitle 
+                                className="text-base cursor-pointer hover:text-primary transition-colors line-clamp-3"
+                                onClick={() => handleRenameStart(project)}
+                                title="Click to rename"
+                              >
+                                {project.name}
+                              </CardTitle>
+                              {project.isPublished && (
+                                <Badge 
+                                  variant="secondary"
+                                  className="text-xs px-2 py-0 h-5 shrink-0"
+                                  style={{ backgroundColor: '#06b6d4', color: 'white' }}
+                                >
+                                  PUBLISHED
+                                </Badge>
+                              )}
+                            </div>
                             <CardDescription>
                               {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                             </CardDescription>
@@ -585,9 +600,20 @@ export function ProjectsDialog({
                             <CardHeader>
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <CardTitle className="text-base line-clamp-3">
-                                    {project.name}
-                                  </CardTitle>
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-base line-clamp-3">
+                                      {project.name}
+                                    </CardTitle>
+                                    {project.isPublished && (
+                                      <Badge 
+                                        variant="secondary"
+                                        className="text-xs px-2 py-0 h-5 shrink-0"
+                                        style={{ backgroundColor: '#06b6d4', color: 'white' }}
+                                      >
+                                        PUBLISHED
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <CardDescription>
                                     {project.sessionData?.animation?.frames?.length ?? 0} frame{(project.sessionData?.animation?.frames?.length ?? 0) !== 1 ? 's' : ''}
                                   </CardDescription>

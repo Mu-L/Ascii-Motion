@@ -1,61 +1,30 @@
 import './App.css'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
-import { CanvasWithShortcuts } from './components/features/CanvasWithShortcuts'
 import { CanvasProvider, useCanvasContext } from './contexts/CanvasContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { AuthProvider } from '@ascii-motion/premium'
+import { AuthProvider, useCloudProject, GalleryHeaderText, NotificationButton } from '@ascii-motion/premium'
 import { ThemeToggle } from './components/common/ThemeToggle'
 import { AccountButton } from './components/features/AccountButton'
-import { AsciiTypePanel } from './components/features/AsciiTypePanel'
-import { AsciiBoxPanel } from './components/features/AsciiBoxPanel'
-import { AsciiTypePreviewDialog } from './components/features/AsciiTypePreviewDialog'
-import { CollapsiblePanel } from './components/common/CollapsiblePanel'
-import { PanelToggleButton } from './components/common/PanelToggleButton'
-import { PanelSeparator } from './components/common/PanelSeparator'
-import { ToolPalette } from './components/features/ToolPalette'
-import { MainCharacterPaletteSection } from './components/features/MainCharacterPaletteSection'
-import { ColorPicker } from './components/features/ColorPicker'
-import { ActiveStyleSection } from './components/features/ActiveStyleSection'
-import { CanvasSettings } from './components/features/CanvasSettings'
-import { AnimationTimeline } from './components/features/AnimationTimeline'
-import { PlaybackOverlay } from './components/features/PlaybackOverlay'
-import { FullscreenToggle } from './components/features/FullscreenToggle'
-import { cn } from '@/lib/utils'
-import { PerformanceOverlay } from './components/common/PerformanceOverlay'
 import { HamburgerMenu } from './components/features/HamburgerMenu'
+import { GalleryMobileMenu } from './components/features/GalleryMobileMenu'
 import { ExportImportButtons } from './components/features/ExportImportButtons'
-import { ImportModal } from './components/features/ImportModal'
-import { MediaImportPanel } from './components/features/MediaImportPanel'
-import { GradientPanel } from './components/features/GradientPanel'
-import { EffectsPanel } from './components/features/EffectsPanel'
-import { GeneratorsPanel } from './components/features/GeneratorsPanel'
-import { ImageExportDialog } from './components/features/ImageExportDialog'
-import { VideoExportDialog } from './components/features/VideoExportDialog'
-import { SessionExportDialog } from './components/features/SessionExportDialog'
-import { TextExportDialog } from './components/features/TextExportDialog'
-import { JsonExportDialog } from './components/features/JsonExportDialog'
-import { HtmlExportDialog } from './components/features/HtmlExportDialog'
-import { ReactExportDialog } from './components/features/ReactExportDialog'
-import { JsonImportDialog } from './components/features/JsonImportDialog'
-import { SetFrameDurationDialog } from './components/features/timeEffects/SetFrameDurationDialog'
-import { AddFramesDialog } from './components/features/timeEffects/AddFramesDialog'
-import { WaveWarpDialog } from './components/features/timeEffects/WaveWarpDialog'
-import { WiggleDialog } from './components/features/timeEffects/WiggleDialog'
-import { useLayoutState } from './hooks/useLayoutState'
-import { SaveToCloudDialog } from './components/features/SaveToCloudDialog'
-import { ProjectsDialog } from './components/features/ProjectsDialog'
 import { useCloudDialogState } from './hooks/useCloudDialogState'
 import { useCloudProjectActions } from './hooks/useCloudProjectActions'
-import { useAuth, usePasswordRecoveryCallback, UpdatePasswordDialog } from '@ascii-motion/premium'
+import { useAuth, usePasswordRecoveryCallback, useEmailVerificationCallback, UpdatePasswordDialog, SignInDialog } from '@ascii-motion/premium'
 import { InlineProjectNameEditor } from './components/features/InlineProjectNameEditor'
-import { NewProjectDialog } from './components/features/NewProjectDialog'
-import { ProjectSettingsDialog } from './components/features/ProjectSettingsDialog'
+import { SaveToCloudDialog } from './components/features/SaveToCloudDialog'
+import { ProjectsDialog } from './components/features/ProjectsDialog'
 import { SilentSaveHandler } from './components/features/SilentSaveHandler'
 import { Toaster } from './components/ui/sonner'
-import { WelcomeDialog } from './components/features/WelcomeDialog'
+import { toast } from 'sonner'
 import { MobileDialog } from './components/features/MobileDialog'
 import { BrushSizePreviewOverlay } from './components/features/BrushSizePreviewOverlay'
+import { PublishToGalleryDialogWrapper } from './components/features/PublishToGalleryDialogWrapper'
+import { PerformanceOverlay } from './components/common/PerformanceOverlay'
+import { EditorPage } from './pages/EditorPage'
+import { CommunityPage } from './pages/CommunityPage'
 
 /**
  * Inner component that uses auth hooks
@@ -63,13 +32,12 @@ import { BrushSizePreviewOverlay } from './components/features/BrushSizePreviewO
  * Fixed: Moved useAuth hook inside AuthProvider context
  */
 function AppContent() {
-  const { layout, toggleLeftPanel, toggleRightPanel, toggleBottomPanel, toggleFullscreen } = useLayoutState()
-  
   // Get typography callbacks from CanvasContext
   const { setFontSize, setCharacterSpacing, setLineSpacing, setSelectedFontId } = useCanvasContext()
   
   // Cloud storage state and actions
   const { user } = useAuth()
+  const { loadFromCloud } = useCloudProject()
   const { 
     showSaveToCloudDialog, 
     showProjectsDialog,
@@ -79,6 +47,7 @@ function AppContent() {
   const {
     handleLoadFromCloud: loadFromCloudBase,
     handleDownloadProject,
+    projectsRefreshTrigger,
   } = useCloudProjectActions()
 
   // Wrapper that includes typography callbacks
@@ -94,9 +63,127 @@ function AppContent() {
     [loadFromCloudBase, setFontSize, setCharacterSpacing, setLineSpacing, setSelectedFontId]
   );
 
+  // Track if we've already processed URL parameters (prevents infinite loop)
+  const processedUrlRef = useRef(false);
+
+  // Handle URL parameters for remix flow
+  useEffect(() => {
+    // Skip if already processed
+    if (processedUrlRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const projectId = params.get('project')
+    const isRemix = params.get('remix') === 'true'
+    const manageProjects = params.get('manage-projects') === 'true'
+
+    // Open "My Projects" dialog if requested
+    if (manageProjects && user) {
+      processedUrlRef.current = true;
+      setShowProjectsDialog(true)
+      // Clean up URL immediately
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+      return
+    }
+
+    // Auto-load project if specified
+    if (projectId && user && isRemix) {
+      processedUrlRef.current = true;
+      // Clean up URL IMMEDIATELY to prevent re-triggers
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+      
+      // Fetch project data then load it
+      const loadRemixedProject = async () => {
+        try {
+          const cloudProject = await loadFromCloud(projectId)
+          if (cloudProject) {
+            await handleLoadFromCloud(projectId, cloudProject.sessionData)
+          }
+        } catch (error) {
+          console.error('Failed to load remixed project:', error)
+        }
+      }
+      
+      loadRemixedProject()
+    }
+  }, [user, handleLoadFromCloud, loadFromCloud, setShowProjectsDialog])
+
   // Password recovery callback detection
   const { isRecovery, resetRecovery } = usePasswordRecoveryCallback()
   const [showUpdatePasswordDialog, setShowUpdatePasswordDialog] = useState(isRecovery)
+
+  // Email verification callback detection
+  useEmailVerificationCallback()
+
+  // State for sign-in dialog (for email verification toast button)
+  const [showSignInDialog, setShowSignInDialog] = useState(false)
+
+  // Listen for custom event to open sign-in dialog
+  useEffect(() => {
+    const handleOpenSignIn = () => {
+      setShowSignInDialog(true)
+    }
+    
+    window.addEventListener('open-signin-dialog', handleOpenSignIn)
+    return () => window.removeEventListener('open-signin-dialog', handleOpenSignIn)
+  }, [])
+
+  // Navigation
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+
+  // Check if we're on community routes
+  const isCommunityRoute = location.pathname.startsWith('/community')
+  
+  // State for gallery header text animation
+  const [isGalleryTextVisible, setIsGalleryTextVisible] = useState(false)
+  
+  // Setup IntersectionObserver for hero animation on gallery page
+  useEffect(() => {
+    if (!isCommunityRoute) {
+      setIsGalleryTextVisible(false)
+      return
+    }
+    
+    // Wait for the hero animation element to be rendered
+    const checkForHeroElement = () => {
+      const heroElement = document.querySelector('[data-hero-animation="true"]')
+      if (!heroElement) {
+        // Retry after a short delay if element not found
+        setTimeout(checkForHeroElement, 100)
+        return
+      }
+      
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            // Show text when hero is NOT in viewport (exiting)
+            // Hide text when hero IS in viewport (entering)
+            setIsGalleryTextVisible(!entry.isIntersecting)
+          })
+        },
+        {
+          threshold: 0.1, // Trigger when 10% of hero is visible
+          rootMargin: '0px',
+        }
+      )
+      
+      observer.observe(heroElement)
+      
+      return () => {
+        observer.disconnect()
+      }
+    }
+    
+    // Start checking for the hero element
+    const cleanup = checkForHeroElement()
+    
+    return cleanup
+  }, [isCommunityRoute, location.pathname])
 
   // Update dialog visibility when recovery state changes
   useEffect(() => {
@@ -112,193 +199,88 @@ function AppContent() {
 
   return (
     <div className="h-screen grid grid-rows-[auto_1fr] bg-background text-foreground">
-        {/* Header - compact */}
-        <header className="flex-shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="px-4 py-2">
-            <div className="flex justify-between items-center">
-              <div className="flex gap-3 relative items-center">
-                <HamburgerMenu />
-                <div
-                  className="ascii-logo ascii-logo-selectable font-mono tracking-tighter whitespace-pre"
-                  aria-label="ASCII Motion logo"
-                >
-                  <span className="text-purple-500">----▗▄▖  ▗▄▄▖ ▗▄▄▖▗▄▄▄▖▗▄▄▄▖    ▗▖  ▗▖ ▗▄▖▗▄▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖</span>
-                  <span className="text-purple-400"> --▐▌ ▐▌▐▌   ▐▌     █    █      ▐▛▚▞▜▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▛▚▖▐▌</span>
-                  <span className="text-purple-400">  -▐▛▀▜▌ ▝▀▚▖▐▌     █    █      ▐▌  ▐▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▌ ▝▜▌</span>
-                  <span className="text-purple-300">  -▐▌ ▐▌▗▄▄▞▘▝▚▄▄▖▗▄█▄▖▗▄█▄▖    ▐▌  ▐▌▝▚▄▞▘ █  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌</span>
-                </div>
-              </div>
-              <div className="flex-1 flex justify-center">
-                <InlineProjectNameEditor />
-              </div>
-              <div className="flex items-center gap-2">
-                <ExportImportButtons />
-                <ThemeToggle />
-                <AccountButton />
-              </div>
+        {/* Header - adaptive design with fixed height */}
+        <header className="flex-shrink-0 border-b border-border/30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-16">
+          <div className="px-4 h-full">
+            <div className="flex items-center h-full">
+              {isCommunityRoute ? (
+                /* Community Gallery Header Layout */
+                <>
+                  {/* Left side - Hamburger menu */}
+                  <div className="flex gap-3 items-center flex-shrink-0">
+                    <GalleryMobileMenu />
+                  </div>
+                  
+                  {/* Center - Animated Gallery Text (slides in from bottom) - Hidden below 1210px */}
+                  <div className="flex-1 items-center justify-center overflow-hidden min-w-0 hidden xl:flex" style={{ height: '64px' }}>
+                    <div
+                      className={`transition-all duration-300 ease-in-out ${
+                        isGalleryTextVisible
+                          ? 'translate-y-0 opacity-100'
+                          : 'translate-y-full opacity-0'
+                      }`}
+                    >
+                      <GalleryHeaderText autoPlay={true} />
+                    </div>
+                  </div>
+                  
+                  {/* Spacer - visible when animation is hidden */}
+                  <div className="flex-1 xl:hidden"></div>
+                  
+                  {/* Right side - Theme toggle + Account */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <ThemeToggle />
+                    {user && <NotificationButton />}
+                    <AccountButton />
+                  </div>
+                </>
+              ) : (
+                /* Editor Header Layout */
+                <>
+                  {/* Left side - Hamburger + ASCII Motion Logo */}
+                  <div className="flex gap-3 relative items-center">
+                    <HamburgerMenu 
+                      onOpenGallery={() => navigate('/community')}
+                      onOpenPublish={() => setShowPublishDialog(true)}
+                    />
+                    <div
+                      onClick={() => navigate('/')}
+                      className="ascii-logo ascii-logo-selectable font-mono tracking-tighter whitespace-pre hover:opacity-80 transition-opacity cursor-pointer"
+                      aria-label="ASCII Motion logo"
+                    >
+                      <span className="text-purple-500">----▗▄▖  ▗▄▄▖ ▗▄▄▖▗▄▄▄▖▗▄▄▄▖    ▗▖  ▗▖ ▗▄▖▗▄▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖</span>
+                      <span className="text-purple-400"> --▐▌ ▐▌▐▌   ▐▌     █    █      ▐▛▚▞▜▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▛▚▖▐▌</span>
+                      <span className="text-purple-400">  -▐▛▀▜▌ ▝▀▚▖▐▌     █    █      ▐▌  ▐▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▌ ▝▜▌</span>
+                      <span className="text-purple-300">  -▐▌ ▐▌▗▄▄▞▘▝▚▄▄▖▗▄█▄▖▗▄█▄▖    ▐▌  ▐▌▝▚▄▞▘ █  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌</span>
+                    </div>
+                  </div>
+                  
+                  {/* Center - Project name editor */}
+                  <div className="flex-1 flex justify-center">
+                    <InlineProjectNameEditor />
+                  </div>
+                  
+                  {/* Right side - Export/Import + Theme toggle + Account */}
+                  <div className="flex items-center gap-2">
+                    <ExportImportButtons />
+                    <ThemeToggle />
+                    {user && <NotificationButton />}
+                    <AccountButton />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
 
-        {/* Main Content Grid */}
-        <div className="relative flex-1 overflow-hidden">
-          {/* Left Panel - matches canvas height */}
-          <div className={cn(
-              "absolute top-0 left-0 z-10 transition-all duration-300 ease-out",
-              layout.bottomPanelOpen ? "bottom-[var(--bottom-panel-height,20rem)]" : "bottom-4", // Use dynamic height or fallback
-              !layout.leftPanelOpen && "pointer-events-none" // Allow mouse events to pass through when collapsed
-            )}>
-              <CollapsiblePanel
-                isOpen={layout.leftPanelOpen}
-                side="left"
-                minWidth="w-44"
-              >
-                <div className="h-full flex flex-col">
-                  {/* Tools at the top */}
-                  <div className="flex-1">
-                    <ToolPalette />
-                  </div>
-                </div>
-              </CollapsiblePanel>
-              
-              {/* Left Panel Toggle Button - centered on canvas area */}
-              <div className={cn(
-                "absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ease-out pointer-events-auto",
-                layout.leftPanelOpen ? "left-44" : "left-0"
-              )}>
-                <PanelToggleButton
-                  isOpen={layout.leftPanelOpen}
-                  onToggle={toggleLeftPanel}
-                  side="left"
-                />
-              </div>
-            </div>
-
-            {/* Right Panel - matches canvas height */}
-            <div className={cn(
-              "absolute top-0 right-0 z-10 transition-all duration-300 ease-out",
-              layout.bottomPanelOpen ? "bottom-[var(--bottom-panel-height,20rem)]" : "bottom-4", // Use dynamic height or fallback
-              !layout.rightPanelOpen && "pointer-events-none" // Allow mouse events to pass through when collapsed
-            )}>
-              <CollapsiblePanel
-                isOpen={layout.rightPanelOpen}
-                side="right"
-                minWidth="w-56"
-              >
-                <div className="space-y-3">
-                  <ActiveStyleSection />
-                  
-                  <PanelSeparator />
-                  
-                  <MainCharacterPaletteSection />
-                  
-                  <PanelSeparator />
-                  
-                  {/* Color Picker - now contains its own collapsible sections */}
-                  <ColorPicker />
-                </div>
-              </CollapsiblePanel>
-              
-              {/* Right Panel Toggle Button - centered on canvas area */}
-              <div className={cn(
-                "absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ease-out pointer-events-auto",
-                layout.rightPanelOpen ? "right-56" : "right-0"
-              )}>
-                <PanelToggleButton
-                  isOpen={layout.rightPanelOpen}
-                  onToggle={toggleRightPanel}
-                  side="right"
-                />
-              </div>
-            </div>
-
-            {/* Bottom Panel */}
-            <div className={cn(
-              "absolute bottom-0 left-0 right-0 z-10",
-              !layout.bottomPanelOpen && "pointer-events-none" // Allow mouse events to pass through when collapsed
-            )}>
-              <CollapsiblePanel
-                isOpen={layout.bottomPanelOpen}
-                side="bottom"
-              >
-                {/* Bottom Panel Toggle Button - moves with the panel */}
-                <div className="absolute left-1/2 -translate-x-1/2 -top-0.5 z-20 pointer-events-auto">
-                  <PanelToggleButton
-                    isOpen={layout.bottomPanelOpen}
-                    onToggle={toggleBottomPanel}
-                    side="bottom"
-                  />
-                </div>
-                
-                <AnimationTimeline />
-              </CollapsiblePanel>
-            </div>
-
-            {/* Center Canvas Area - positioned to account for panel space */}
-            <div 
-              className={cn(
-                "absolute inset-0 flex flex-col transition-all duration-300 ease-out",
-                layout.leftPanelOpen && "left-44",
-                layout.rightPanelOpen && "right-56", 
-                layout.bottomPanelOpen ? "bottom-[var(--bottom-panel-height,20rem)]" : "bottom-4" // Use dynamic height or fallback
-              )}
-            >
-              {/* Canvas Settings Header */}
-              <div className="flex-shrink-0 border-b border-border/50 bg-background/95 backdrop-blur" style={{ overflow: 'visible', position: 'relative', zIndex: 10 }}>
-                <div className="px-3 py-2 flex justify-center items-center">
-                  <CanvasSettings />
-                </div>
-              </div>
-              
-              {/* Canvas Container - fills remaining space */}
-              <div className="flex-1 overflow-auto min-h-0 bg-muted/10 relative">
-                <div className="absolute inset-0 pt-4 px-4 pb-0">
-                  <div className="w-full h-full relative">
-                    <CanvasWithShortcuts className="w-full h-full" />
-                    
-                    {/* Playback Overlay - shows when timeline is collapsed */}
-                    <PlaybackOverlay isVisible={!layout.bottomPanelOpen} />
-                    
-                    {/* Fullscreen Toggle - always visible */}
-                    <FullscreenToggle 
-                      isFullscreen={layout.isFullscreen}
-                      onToggle={toggleFullscreen}
-                    />
-                    <AsciiTypePanel />
-                    <AsciiBoxPanel />
-                    <AsciiTypePreviewDialog />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Export/Import Dialogs - Inside CanvasProvider to access context */}
-          <ImportModal />
-          <MediaImportPanel />
-          <GradientPanel />
-          <EffectsPanel />
-          <GeneratorsPanel />
-          <ImageExportDialog />
-          <VideoExportDialog />
-          <SessionExportDialog />
-          <TextExportDialog />
-          <JsonExportDialog />
-          <HtmlExportDialog />
-          <ReactExportDialog />
-          <JsonImportDialog />
-          
-          {/* Time Effects Dialogs */}
-          <SetFrameDurationDialog />
-          <AddFramesDialog />
-          <WaveWarpDialog />
-          <WiggleDialog />
-          
-          {/* Project Management Dialogs */}
-          <NewProjectDialog />
-          <ProjectSettingsDialog />
-          
-          {/* Cloud Storage Dialogs - Inside CanvasProvider to access context */}
+        {/* Routes - Main app vs Community gallery */}
+        <Routes>
+          <Route path="/" element={<EditorPage />} />
+          <Route path="/community/*" element={<CommunityPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        
+        {/* Global Dialogs - Available on all routes */}
           {user && (
             <>
               {/* Silent Save Handler - Handles Ctrl+S for already-saved projects */}
@@ -313,6 +295,29 @@ function AppContent() {
                 onOpenChange={setShowProjectsDialog}
                 onLoadProject={handleLoadFromCloud}
                 onDownloadProject={handleDownloadProject}
+                refreshTrigger={projectsRefreshTrigger}
+              />
+              
+              {/* Publish to Gallery Dialog - Community feature */}
+              <PublishToGalleryDialogWrapper
+                isOpen={showPublishDialog}
+                onOpenChange={setShowPublishDialog}
+                onPublishSuccess={(projectId) => {
+                  console.log('Published project:', projectId)
+                  setShowPublishDialog(false)
+                  
+                  // Show success toast with link to gallery
+                  toast.success('Published to community gallery', {
+                    description: 'Your project is now live!',
+                    action: {
+                      label: 'Go to gallery',
+                      onClick: () => {
+                        window.location.href = '/community'
+                      }
+                    },
+                    duration: 5000,
+                  })
+                }}
               />
             </>
           )}
@@ -323,8 +328,11 @@ function AppContent() {
             onOpenChange={handleUpdatePasswordClose}
           />
           
-          {/* Welcome Dialog - Shows on first visit and major version updates */}
-          <WelcomeDialog />
+          {/* Sign In Dialog - Shows after email verification */}
+          <SignInDialog 
+            open={showSignInDialog} 
+            onOpenChange={setShowSignInDialog}
+          />
           
           {/* Mobile Dialog - Shows on mobile devices to inform about desktop-only support */}
           <MobileDialog />
@@ -346,17 +354,19 @@ function AppContent() {
 
 /**
  * App wrapper component
- * Provides AuthProvider and ThemeProvider context
+ * Provides AuthProvider, ThemeProvider, CanvasProvider, and BrowserRouter context
  */
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <CanvasProvider>
-          <AppContent />
-        </CanvasProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          <CanvasProvider>
+            <AppContent />
+          </CanvasProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

@@ -60,6 +60,7 @@
 **NEVER include in ANY documentation:**
 - ❌ Real API keys or secrets (use `YOUR_API_KEY_HERE`)
 - ❌ Real database credentials (use `your-project-url-here`)
+- ❌ **Supabase project IDs** (use `YOUR_SUPABASE_PROJECT_ID`)
 - ❌ Real user emails or data (use `user@example.com`)
 - ❌ Production URLs with sensitive data
 - ❌ Service role keys
@@ -69,12 +70,30 @@
 **ALWAYS use placeholders:**
 ```bash
 # ✅ CORRECT
-VITE_SUPABASE_URL=your-project-url-here
+VITE_SUPABASE_URL=https://YOUR_SUPABASE_PROJECT_ID.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_SUPABASE_PROJECT_ID=YOUR_SUPABASE_PROJECT_ID
 
 # ❌ WRONG
 VITE_SUPABASE_URL=https://abc123.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_PROJECT_ID=abc123xyz456
+```
+
+**🔑 IMPORTANT: Getting the Correct Project ID**
+When using Supabase MCP tools, ALWAYS get the project ID dynamically:
+```typescript
+// ✅ CORRECT: Get project ID from MCP tool
+const projects = await mcp_supabase_list_projects();
+const projectId = projects[0].id; // ascii-motion-v2
+
+// ❌ WRONG: Hardcoded project ID from memory or old docs
+const projectId = 'oguswervkjazuhzthfzg'; // This is an old/wrong ID!
+```
+
+**If you accidentally commit sensitive IDs, run:**
+```bash
+npx tsx packages/premium/scripts/sanitize-project-ids.ts
 ```
 
 #### **📋 Quick Decision Tree**
@@ -982,6 +1001,81 @@ const welcomeTabs: WelcomeTab[] = [
 - **Position persistence**: Pencil-specific in toolStore
 
 **💥 If you break shift+click functionality, you MUST fix it before proceeding with any other work.**
+
+## 🚨 **CRITICAL: NEVER Modify User Subscription Tiers Without Explicit Permission**
+
+**⚠️ ABSOLUTE RULE: Do NOT change any user's subscription tier unless explicitly instructed by the project owner.**
+
+### **Why This Rule Exists:**
+- **Real Users with Real Data**: Production database contains actual user accounts
+- **Potential Revenue Impact**: Changing tiers could affect billing and subscriptions
+- **Privacy Violations**: Modifying user data without authorization is unethical
+- **Trust Breach**: Unauthorized changes violate user trust and expectations
+
+### **Scenarios Where This Rule Applies:**
+
+#### **❌ NEVER DO THIS:**
+```sql
+-- ❌ WRONG: Changing user tier without explicit permission
+UPDATE profiles
+SET subscription_tier_id = 'admin-tier-id'
+WHERE id = 'some-user-id';  -- This is FORBIDDEN
+
+-- ❌ WRONG: Bulk tier changes
+UPDATE profiles
+SET subscription_tier_id = 'pro-tier-id'
+WHERE subscription_tier_id = 'free-tier-id';  -- NEVER do this
+```
+
+#### **✅ ONLY DO THIS WITH EXPLICIT PERMISSION:**
+```sql
+-- ✅ CORRECT: Only when user explicitly says "change my account to admin"
+-- And you have confirmed the exact user ID they want changed
+UPDATE profiles
+SET subscription_tier_id = 'admin-tier-id'
+WHERE id = 'user-id-they-explicitly-provided';
+```
+
+### **What TO DO Instead:**
+
+**If testing admin features:**
+1. **Ask for permission**: "Which account should have admin access?"
+2. **Get explicit user ID**: "Please provide the user ID or email"
+3. **Confirm before executing**: "I will change user X to admin tier, is this correct?"
+4. **Document the change**: Note why the change was made
+
+**If troubleshooting tier-related issues:**
+1. **Inspect without modifying**: Use SELECT queries to check tier status
+2. **Report findings**: Tell the user what you found
+3. **Propose solutions**: Suggest what COULD be changed (but don't do it)
+4. **Wait for permission**: Only execute after explicit approval
+
+### **Emergency Rollback Procedure:**
+If you accidentally modified a tier:
+```sql
+-- Check subscription_tiers table for correct IDs
+SELECT id, name FROM subscription_tiers;
+
+-- Revert to original tier (if known)
+UPDATE profiles
+SET subscription_tier_id = 'original-tier-id'
+WHERE id = 'affected-user-id';
+
+-- IMMEDIATELY inform the project owner of the mistake
+```
+
+### **Documentation Requirements:**
+When tier changes ARE authorized:
+- [ ] Record the user ID changed
+- [ ] Note the original tier
+- [ ] Note the new tier
+- [ ] Document the reason for the change
+- [ ] Record who authorized the change
+- [ ] Add timestamp of when change was made
+
+**Remember: User data is sacred. When in doubt, ASK first.**
+
+---
 
 ## Code Organization Principles
 

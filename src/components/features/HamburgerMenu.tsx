@@ -8,7 +8,7 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from '../ui/menubar';
-import { Menu, Info, Keyboard, CloudUpload, CloudDownload, FilePlus2, Settings, Sparkles } from 'lucide-react';
+import { Menu, Info, Keyboard, CloudUpload, CloudDownload, FilePlus2, Settings, Sparkles, Users, Upload } from 'lucide-react';
 import { AboutDialog } from './AboutDialog';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { useAuth } from '@ascii-motion/premium';
@@ -16,12 +16,18 @@ import { useCloudDialogState } from '../../hooks/useCloudDialogState';
 import { useProjectDialogState } from '../../hooks/useProjectDialogState';
 import { useProjectFileActions } from '../../hooks/useProjectFileActions';
 import { useWelcomeDialog } from '../../hooks/useWelcomeDialog';
+import { FEATURES } from '../../constants/features';
+
+interface HamburgerMenuProps {
+  onOpenGallery?: () => void;
+  onOpenPublish?: () => void;
+}
 
 /**
  * Hamburger menu button for the top header bar
  * Contains app information and cloud storage operations
  */
-export const HamburgerMenu: React.FC = () => {
+export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onOpenGallery, onOpenPublish }) => {
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   
@@ -99,6 +105,24 @@ export const HamburgerMenu: React.FC = () => {
             </MenubarItem>
             
             <MenubarSeparator />
+            
+            {FEATURES.COMMUNITY_SHOWCASE && onOpenGallery && (
+              <>
+                <MenubarItem onClick={onOpenGallery} className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Community Gallery</span>
+                </MenubarItem>
+                
+                {user && onOpenPublish && (
+                  <MenubarItem onClick={onOpenPublish} className="cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" />
+                    <span>Publish to Gallery</span>
+                  </MenubarItem>
+                )}
+                
+                <MenubarSeparator />
+              </>
+            )}
             
             <MenubarItem onClick={resetWelcomeState} className="cursor-pointer">
               <Sparkles className="mr-2 h-4 w-4" />
