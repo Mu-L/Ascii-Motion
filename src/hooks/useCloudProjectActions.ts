@@ -26,6 +26,7 @@ import { useProjectMetadataStore } from '../stores/projectMetadataStore';
 export function useCloudProjectActions() {
   const { currentProjectId, setCurrentProjectId } = useProjectMetadataStore();
   const [showProjectsDialog, setShowProjectsDialog] = useState(false);
+  const [projectsRefreshTrigger, setProjectsRefreshTrigger] = useState(0);
 
   const { saveToCloud } = useCloudProject();
   const { importSession } = useSessionImporter();
@@ -167,20 +168,29 @@ export function useCloudProjectActions() {
               const timestamp = Date.now();
               const previewUrlWithCache = `${uploadResult.url}?v=${timestamp}`;
 
-              // Update project with new preview URL (with cache busting)
-              await supabase
+              // Update project with new preview URL (name and description already updated by saveToCloud above)
+              console.log('[CloudActions] Updating preview image for published project:', project.id);
+              
+              const { error: updateError } = await supabase
                 .from('projects')
                 .update({
                   preview_image_url: previewUrlWithCache,
                 } as never) // Type assertion to bypass Supabase type inference
                 .eq('id', project.id);
 
-              console.log('[CloudActions] Preview image regenerated successfully with cache-busting timestamp');
+              if (updateError) {
+                console.error('[CloudActions] Failed to update preview image:', updateError);
+              } else {
+                console.log('[CloudActions] Preview image updated successfully for published project');
+              }
             } catch (previewError) {
               console.error('[CloudActions] Failed to regenerate preview image:', previewError);
               // Don't fail the whole save if preview regeneration fails
             }
           }
+
+          // Trigger project list refresh
+          setProjectsRefreshTrigger(prev => prev + 1);
 
           return project;
         } else {
@@ -292,6 +302,7 @@ export function useCloudProjectActions() {
     currentProjectId,
     showProjectsDialog,
     setShowProjectsDialog,
+    projectsRefreshTrigger, // Export trigger for project list refresh
 
     // Actions
     handleSaveToCloud,

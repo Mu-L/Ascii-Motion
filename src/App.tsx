@@ -47,6 +47,7 @@ function AppContent() {
   const {
     handleLoadFromCloud: loadFromCloudBase,
     handleDownloadProject,
+    projectsRefreshTrigger,
   } = useCloudProjectActions()
 
   // Wrapper that includes typography callbacks
@@ -294,6 +295,7 @@ function AppContent() {
                 onOpenChange={setShowProjectsDialog}
                 onLoadProject={handleLoadFromCloud}
                 onDownloadProject={handleDownloadProject}
+                refreshTrigger={projectsRefreshTrigger}
               />
               
               {/* Publish to Gallery Dialog - Community feature */}

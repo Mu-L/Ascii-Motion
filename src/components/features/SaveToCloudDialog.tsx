@@ -45,7 +45,13 @@ export function SaveToCloudDialog({ open, onOpenChange }: SaveToCloudDialogProps
   const exportData = useExportDataCollector();
   const { handleSaveToCloud } = useCloudProjectActions();
   const { getUserProfile, listProjects } = useCloudProject();
-  const { projectName: storedProjectName, projectDescription: storedProjectDescription, currentProjectId } = useProjectMetadataStore();
+  const { 
+    projectName: storedProjectName, 
+    projectDescription: storedProjectDescription, 
+    currentProjectId,
+    setProjectName: setStoredProjectName,
+    setProjectDescription: setStoredProjectDescription
+  } = useProjectMetadataStore();
   const { setShowProjectsDialog, saveAsMode, setSaveAsMode } = useCloudDialogState();
   
   const [projectName, setProjectName] = useState(storedProjectName);
@@ -140,9 +146,13 @@ export function SaveToCloudDialog({ open, onOpenChange }: SaveToCloudDialogProps
       );
 
       if (project) {
+        // Update store with the sanitized values that were actually saved
+        setStoredProjectName(sanitizedName);
+        setStoredProjectDescription(sanitizedDescription || '');
         onOpenChange(false);
-        setProjectName(storedProjectName);
-        setDescription(storedProjectDescription);
+        // Reset local form state
+        setProjectName(sanitizedName);
+        setDescription(sanitizedDescription || '');
       }
     } catch (err) {
       console.error('[SaveToCloudDialog] Save failed:', err);

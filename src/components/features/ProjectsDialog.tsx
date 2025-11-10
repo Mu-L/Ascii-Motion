@@ -13,7 +13,7 @@
  * - This keeps UI components with shadcn/ui design system while logic stays in premium package
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCloudProject } from '@ascii-motion/premium';
 import type { CloudProject } from '@ascii-motion/premium';
 import {
@@ -72,6 +72,7 @@ interface ProjectsDialogProps {
   onOpenChange: (open: boolean) => void;
   onLoadProject: (projectId: string, sessionData: unknown) => Promise<void>;
   onDownloadProject: (projectId: string, projectName: string, sessionData: unknown) => void;
+  refreshTrigger?: number; // Trigger to refresh project list
 }
 
 export function ProjectsDialog({
@@ -79,6 +80,7 @@ export function ProjectsDialog({
   onOpenChange,
   onLoadProject,
   onDownloadProject,
+  refreshTrigger,
 }: ProjectsDialogProps) {
   const {
     loading,
@@ -106,13 +108,30 @@ export function ProjectsDialog({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  // Load projects when dialog opens
+  // Load projects list from database
+  const loadProjectsList = useCallback(async () => {
+    const [activeData, deletedData, profile] = await Promise.all([
+      listProjects(),
+      listDeletedProjects(),
+      getUserProfile(),
+    ]);
+    
+    // Sort active projects by most recently opened first
+    const sortedActive = activeData.sort((a, b) => 
+      new Date(b.lastOpenedAt).getTime() - new Date(a.lastOpenedAt).getTime()
+    );
+    
+    setProjects(sortedActive);
+    setDeletedProjects(deletedData);
+    setUserProfile(profile);
+  }, [listProjects, listDeletedProjects, getUserProfile]);
+
+  // Load projects when dialog opens OR when refreshTrigger changes
   useEffect(() => {
     if (open) {
       loadProjectsList();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, refreshTrigger, loadProjectsList]);
 
   // Reset dialog state when closed
   useEffect(() => {
@@ -133,23 +152,6 @@ export function ProjectsDialog({
       console.error('[ProjectsDialog] Error:', error);
     }
   }, [error]);
-
-  const loadProjectsList = async () => {
-    const [activeData, deletedData, profile] = await Promise.all([
-      listProjects(),
-      listDeletedProjects(),
-      getUserProfile(),
-    ]);
-    
-    // Sort active projects by most recently opened first
-    const sortedActive = activeData.sort((a, b) => 
-      new Date(b.lastOpenedAt).getTime() - new Date(a.lastOpenedAt).getTime()
-    );
-    
-    setProjects(sortedActive);
-    setDeletedProjects(deletedData);
-    setUserProfile(profile);
-  };
 
   // Check if user can create more projects
   const canCreateProject = () => {
