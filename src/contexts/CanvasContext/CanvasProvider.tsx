@@ -54,6 +54,20 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({
   const [justCommittedMove, setJustCommittedMove] = useState(false);
 
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
+  
+  // Optimized setter that only updates if coordinates actually changed
+  const setHoveredCellOptimized = useCallback((cell: { x: number; y: number } | null) => {
+    setHoveredCell((prev) => {
+      // If both are null, no change
+      if (!prev && !cell) return prev;
+      // If one is null but not the other, update
+      if (!prev || !cell) return cell;
+      // If coordinates haven't changed, return previous reference to prevent re-renders
+      if (prev.x === cell.x && prev.y === cell.y) return prev;
+      // Coordinates changed, update
+      return cell;
+    });
+  }, []);
 
   const [hoverPreview, setHoverPreview] = useState<CanvasContextValue['hoverPreview']>({
     active: false,
@@ -165,7 +179,7 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({
     setSelectionMode,
     setPendingSelectionStart,
     setJustCommittedMove,
-    setHoveredCell,
+    setHoveredCell: setHoveredCellOptimized,
     setHoverPreview,
     setMoveState,
     startPasteMode,

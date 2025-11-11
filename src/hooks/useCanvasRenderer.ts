@@ -62,7 +62,7 @@ const setupHighDPICanvas = (
  * - Performance measurement
  */
 export const useCanvasRenderer = () => {
-  const { canvasRef, pasteMode, panOffset, hoveredCell, fontMetrics } = useCanvasContext();
+  const { canvasRef, pasteMode, panOffset, fontMetrics } = useCanvasContext();
   const { theme } = useTheme();
   const {
     effectiveCellWidth,
@@ -127,9 +127,8 @@ export const useCanvasRenderer = () => {
   const overlayState = useMemo(() => ({
     moveState,
     selectionData,
-    hoveredCell,
     pasteMode
-  }), [moveState, selectionData, hoveredCell, pasteMode]);
+  }), [moveState, selectionData, pasteMode]);
 
   // Memoize font and style calculations
   const drawingStyles = useMemo(() => {
@@ -459,20 +458,7 @@ export const useCanvasRenderer = () => {
       ctx.globalAlpha = 1.0;
     }
 
-    // Draw hover cell outline (subtle outline for current cell under cursor)
-    if (hoveredCell && hoveredCell.x >= 0 && hoveredCell.x < width && hoveredCell.y >= 0 && hoveredCell.y < height) {
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)'; // 50% opacity blue outline for screenshots
-      ctx.lineWidth = 2;
-      ctx.setLineDash([]);
-      ctx.strokeRect(
-        Math.round(hoveredCell.x * effectiveCellWidth + panOffset.x),
-        Math.round(hoveredCell.y * effectiveCellHeight + panOffset.y),
-        Math.round(effectiveCellWidth),
-        Math.round(effectiveCellHeight)
-      );
-    }
-
-    // Draw preview overlay 
+    // Draw text cursor overlay 
     if (isPreviewActive && previewData.size > 0) {
       // Check if this is an effects preview (should be fully opaque) or other preview (semi-transparent)
       const isEffectsPreview = isEffectPreviewActive || isTimeEffectPreviewActive;
@@ -588,7 +574,6 @@ export const useCanvasRenderer = () => {
     width,
     height,
     panOffset,
-    hoveredCell,
     moveState,
     pasteMode,
     textToolState,

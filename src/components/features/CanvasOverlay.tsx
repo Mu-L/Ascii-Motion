@@ -15,7 +15,7 @@ export const CanvasOverlay: React.FC = () => {
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   
   // Canvas context and state  
-  const { canvasRef, pasteMode, cellWidth, cellHeight, zoom, panOffset, fontMetrics, hoverPreview, selectionPreview } = useCanvasContext();
+  const { canvasRef, pasteMode, cellWidth, cellHeight, zoom, panOffset, fontMetrics, hoverPreview, selectionPreview, hoveredCell } = useCanvasContext();
   const {
     moveState,
     getTotalOffset,
@@ -706,6 +706,19 @@ export const CanvasOverlay: React.FC = () => {
       ctx.globalAlpha = 1.0;
     }
     
+    // Draw hover cell outline (subtle outline for current cell under cursor)
+    if (hoveredCell && hoveredCell.x >= 0 && hoveredCell.x < width && hoveredCell.y >= 0 && hoveredCell.y < height) {
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)'; // 50% opacity blue outline
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.strokeRect(
+        hoveredCell.x * effectiveCellWidth + panOffset.x,
+        hoveredCell.y * effectiveCellHeight + panOffset.y,
+        effectiveCellWidth,
+        effectiveCellHeight
+      );
+    }
+    
     // Draw hover preview (for brush and other tool-specific previews)
     // Rendered last so it appears on top of all other overlays
     if (hoverPreview.active && hoverPreview.cells.length > 0) {
@@ -798,6 +811,7 @@ export const CanvasOverlay: React.FC = () => {
     boxDrawnCells,
     boxRectanglePreview,
     hoverPreview,
+    hoveredCell,
     canvasBackgroundColor,
     fontMetrics,
     width,
