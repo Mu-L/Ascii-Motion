@@ -1,12 +1,33 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.23";
-export const BUILD_DATE = "2025-11-10T19:47:27.167Z";
-export const BUILD_HASH = "bf8a1d2";
+export const VERSION = "0.2.25";
+export const BUILD_DATE = "2025-11-11T17:20:58.278Z";
+export const BUILD_HASH = "7e9d8f1";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.25",
+    "date": "2025-11-11T17:20:58.278Z",
+    "commits": [
+      "Initial version"
+    ]
+  },
+  {
+    "version": "0.2.24",
+    "date": "2025-11-11T16:36:42.234Z",
+    "commits": [
+      "update flag",
+      "gzip for project upload",
+      "Update version",
+      "Update versions",
+      "chore: Update premium submodule to merged main (performance fixes)",
+      "chore: Update premium submodule (database performance fixes)",
+      "Update flag",
+      "feat: Community Gallery Feature - Phase 12 Production Release"
+    ]
+  },
   {
     "version": "0.2.23",
     "date": "2025-11-10T19:47:27.167Z",

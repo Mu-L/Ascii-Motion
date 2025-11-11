@@ -74,19 +74,31 @@ export const MobileDialog: React.FC = () => {
           </div>
           
           {/* Message */}
-          <p className="text-sm text-foreground leading-relaxed text-center">
-            ASCII Motion is a web app for creating and animating ASCII art. 
-            Currently, only desktop editing is supported. Please visit{' '}
-            <a 
-              href="https://ascii-motion.app" 
-              className="font-semibold text-primary hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ascii-motion.app
-            </a>{' '}
-            on a desktop computer to start making ASCII art.
-          </p>
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-foreground leading-relaxed text-center">
+              ASCII Motion is a web app for creating and animating ASCII art. 
+              Currently, only desktop editing is supported. Please visit{' '}
+              <a 
+                href="https://ascii-motion.app" 
+                className="font-semibold text-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ascii-motion.app
+              </a>{' '}
+              on a desktop computer to start making ASCII art.
+            </p>
+            
+            <p className="text-sm text-foreground leading-relaxed text-center">
+              To see what people are making with ASCII Motion, visit the{' '}
+              <a 
+                href="https://ascii-motion.app/community" 
+                className="font-semibold text-primary hover:underline"
+              >
+                community gallery
+              </a>.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

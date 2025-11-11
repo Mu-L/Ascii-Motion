@@ -15,13 +15,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useAuth, SignUpDialog, SignInDialog, PasswordResetDialog, AccountSettingsDialog, ProfileSettingsDialog, useAdminCheck } from '@ascii-motion/premium';
+import { useAuth, SignUpDialog, SignInDialog, PasswordResetDialog, AccountSettingsDialog, ProfileSettingsDialog, useAdminCheckContext } from '@ascii-motion/premium';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AccountButton() {
   const { user, profile, loading, signOut } = useAuth();
-  const { isAdmin } = useAdminCheck();
+  const { isAdmin } = useAdminCheckContext();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);

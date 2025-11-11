@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { Analytics } from '@vercel/analytics/react'
 import { CanvasProvider, useCanvasContext } from './contexts/CanvasContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { AuthProvider, useCloudProject, GalleryHeaderText, NotificationButton } from '@ascii-motion/premium'
+import { AuthProvider, useCloudProject, GalleryHeaderText, NotificationButton, AdminCheckProvider } from '@ascii-motion/premium'
 import { ThemeToggle } from './components/common/ThemeToggle'
 import { AccountButton } from './components/features/AccountButton'
 import { HamburgerMenu } from './components/features/HamburgerMenu'
@@ -360,11 +360,13 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ThemeProvider>
-          <CanvasProvider>
-            <AppContent />
-          </CanvasProvider>
-        </ThemeProvider>
+        <AdminCheckProvider>
+          <ThemeProvider>
+            <CanvasProvider>
+              <AppContent />
+            </CanvasProvider>
+          </ThemeProvider>
+        </AdminCheckProvider>
       </AuthProvider>
     </BrowserRouter>
   )
