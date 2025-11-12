@@ -203,8 +203,8 @@ Where I'm at with the concept:
  <details>
 <summary> 🤝 Phase 7: Community and Marketing </summary>
    
-- [ ] Build a community sharing site to share and remix projects 
-- [ ] Create live link sharing tools 
+- [x] Build a community sharing site to share and remix projects 
+- [x] Create live link sharing tools 
 - [ ] Make marketing site
 - [ ] Create tutorial series
 - [ ] Create help and tool tip for in product on boarding
