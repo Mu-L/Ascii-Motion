@@ -1,12 +1,24 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.32";
-export const BUILD_DATE = "2025-11-12T08:11:47.669Z";
-export const BUILD_HASH = "86be069";
+export const VERSION = "0.2.33";
+export const BUILD_DATE = "2025-11-13T16:34:26.046Z";
+export const BUILD_HASH = "99db7a2";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.33",
+    "date": "2025-11-13T16:34:26.046Z",
+    "commits": [
+      "Update view counter in gallery",
+      "Updated flag",
+      "Merge branch 'main' of https://github.com/cameronfoxly/Ascii-Motion",
+      "Update Phase 7 tasks to completed status",
+      "Update version",
+      "Update README with community gallery info"
+    ]
+  },
   {
     "version": "0.2.32",
     "date": "2025-11-12T08:11:47.669Z",

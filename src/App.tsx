@@ -13,6 +13,7 @@ import { ExportImportButtons } from './components/features/ExportImportButtons'
 import { useCloudDialogState } from './hooks/useCloudDialogState'
 import { useCloudProjectActions } from './hooks/useCloudProjectActions'
 import { useAuth, usePasswordRecoveryCallback, useEmailVerificationCallback, UpdatePasswordDialog, SignInDialog } from '@ascii-motion/premium'
+import { AsciiMotionLogo } from './components/common/AsciiMotionLogo'
 import { InlineProjectNameEditor } from './components/features/InlineProjectNameEditor'
 import { SaveToCloudDialog } from './components/features/SaveToCloudDialog'
 import { ProjectsDialog } from './components/features/ProjectsDialog'
@@ -243,16 +244,10 @@ function AppContent() {
                       onOpenGallery={() => navigate('/community')}
                       onOpenPublish={() => setShowPublishDialog(true)}
                     />
-                    <div
+                    <AsciiMotionLogo 
                       onClick={() => navigate('/')}
-                      className="ascii-logo ascii-logo-selectable font-mono tracking-tighter whitespace-pre hover:opacity-80 transition-opacity cursor-pointer"
-                      aria-label="ASCII Motion logo"
-                    >
-                      <span className="text-purple-500">----▗▄▖  ▗▄▄▖ ▗▄▄▖▗▄▄▄▖▗▄▄▄▖    ▗▖  ▗▖ ▗▄▖▗▄▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖</span>
-                      <span className="text-purple-400"> --▐▌ ▐▌▐▌   ▐▌     █    █      ▐▛▚▞▜▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▛▚▖▐▌</span>
-                      <span className="text-purple-400">  -▐▛▀▜▌ ▝▀▚▖▐▌     █    █      ▐▌  ▐▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▌ ▝▜▌</span>
-                      <span className="text-purple-300">  -▐▌ ▐▌▗▄▄▞▘▝▚▄▄▖▗▄█▄▖▗▄█▄▖    ▐▌  ▐▌▝▚▄▞▘ █  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌</span>
-                    </div>
+                      height={32}
+                    />
                   </div>
                   
                   {/* Center - Project name editor */}
