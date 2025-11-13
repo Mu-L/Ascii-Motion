@@ -7886,7 +7886,7 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
   // Calculate scaling to fit target height while maintaining aspect ratio
   // Original export uses CELL_WIDTH = 10.8, CELL_HEIGHT = 18 (aspect ratio ~0.6)
   const cellHeight = height / metadata.height;
-  const cellWidth = cellHeight * 0.6; // Maintain monospace aspect ratio
+  const cellWidth = cellHeight * 0.5; // Maintain monospace aspect ratio
   const canvasWidth = metadata.width * cellWidth;
   const canvasHeight = height;
   const fontSize = cellHeight; // Font size matches cell height

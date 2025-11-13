@@ -20,6 +20,7 @@ import { ExternalLink } from 'lucide-react';
 import { useWelcomeDialog } from '@/hooks/useWelcomeDialog';
 import { useToolStore } from '@/stores/toolStore';
 import { WelcomeAsciiAnimation } from './WelcomeAsciiAnimation';
+import { AsciiMotionLogo } from '@/components/common/AsciiMotionLogo';
 import type { WelcomeTab } from '@/types/welcomeDialog';
 import type { Tool } from '@/types';
 
@@ -424,12 +425,7 @@ export const WelcomeDialog: React.FC = () => {
             <div className="flex-shrink-0 px-6 py-6 pb-4">
               <div className="mb-2">
                 <p className="text-sm text-muted-foreground mb-2">Welcome to</p>
-                <div className="ascii-logo font-mono text-[7.2px] leading-[1.2] tracking-tighter select-none whitespace-pre -ml-[1.2ch]">
-                  <div className="text-purple-500">----▗▄▖  ▗▄▄▖ ▗▄▄▖▗▄▄▄▖▗▄▄▄▖    ▗▖  ▗▖ ▗▄▖▗▄▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖</div>
-                  <div className="text-purple-400"> --▐▌ ▐▌▐▌   ▐▌     █    █      ▐▛▚▞▜▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▛▚▖▐▌</div>
-                  <div className="text-purple-400">  -▐▛▀▜▌ ▝▀▚▖▐▌     █    █      ▐▌  ▐▌▐▌ ▐▌ █    █  ▐▌ ▐▌▐▌ ▝▜▌</div>
-                  <div className="text-purple-300">  -▐▌ ▐▌▗▄▄▞▘▝▚▄▄▖▗▄█▄▖▗▄█▄▖    ▐▌  ▐▌▝▚▄▞▘ █  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌</div>
-                </div>
+                <AsciiMotionLogo height={28} />
               </div>
             </div>
 
