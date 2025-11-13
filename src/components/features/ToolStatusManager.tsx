@@ -31,7 +31,7 @@ import { MouseCoordinates } from '../common/MouseCoordinates';
  */
 export const ToolStatusManager: React.FC = () => {
   const { activeTool } = useToolStore();
-  const { altKeyDown } = useCanvasContext();
+  const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { layout } = useLayoutState();
   
   // Check if any right-side panel is open
@@ -50,10 +50,15 @@ export const ToolStatusManager: React.FC = () => {
     rightMargin = layout.rightPanelOpen ? 96 : 320;
   }
 
-  // Calculate effective tool (Alt key overrides with eyedropper for drawing tools)
+  // Calculate effective tool (Alt key overrides with eyedropper for drawing tools, Ctrl overrides pencil with eraser)
   const drawingTools: Tool[] = ['pencil', 'eraser', 'paintbucket', 'gradientfill', 'rectangle', 'ellipse'];
   const shouldAllowEyedropperOverride = drawingTools.includes(activeTool);
-  const effectiveTool = (altKeyDown && shouldAllowEyedropperOverride) ? 'eyedropper' : activeTool;
+  let effectiveTool = activeTool;
+  if (ctrlKeyDown && activeTool === 'pencil') {
+    effectiveTool = 'eraser';
+  } else if (altKeyDown && shouldAllowEyedropperOverride) {
+    effectiveTool = 'eyedropper';
+  }
 
   // Render the appropriate tool status component with smaller text
   const statusContent = (() => {
@@ -66,7 +71,7 @@ export const ToolStatusManager: React.FC = () => {
         return <MagicWandToolStatus />;
       case 'pencil':
       case 'eraser':
-        return <DrawingToolStatus />;
+        return <DrawingToolStatus tool={effectiveTool} />;
       case 'paintbucket':
         return <PaintBucketToolStatus />;
       case 'rectangle':

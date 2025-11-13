@@ -21,7 +21,7 @@ interface CanvasGridProps {
 
 export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
   // Use our new context and state management
-  const { canvasRef, setMouseButtonDown, setShiftKeyDown, setAltKeyDown, altKeyDown } = useCanvasContext();
+  const { canvasRef, setMouseButtonDown, setShiftKeyDown, setAltKeyDown, altKeyDown, setCtrlKeyDown, ctrlKeyDown } = useCanvasContext();
   
   // Get active tool and tool behavior
   const { activeTool, textToolState, isPlaybackMode } = useToolStore();
@@ -32,10 +32,16 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
   const prevToolRef = useRef(activeTool);
   
   // Calculate effective tool (Alt key overrides with eyedropper for drawing tools, except gradientfill)
+  // Ctrl key overrides pencil with eraser
   const drawingTools: Tool[] = ['pencil', 'eraser', 'paintbucket', 'rectangle', 'ellipse'];
   const shouldAllowEyedropperOverride = drawingTools.includes(activeTool);
   
-  const effectiveTool = (altKeyDown && shouldAllowEyedropperOverride) ? 'eyedropper' : activeTool;
+  let effectiveTool = activeTool;
+  if (ctrlKeyDown && activeTool === 'pencil') {
+    effectiveTool = 'eraser';
+  } else if (altKeyDown && shouldAllowEyedropperOverride) {
+    effectiveTool = 'eyedropper';
+  }
   
   // Canvas dimensions hooks already provide computed values
   const {
@@ -243,6 +249,12 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
         setAltKeyDown(true);
       }
       
+      // Handle Ctrl/Meta key for temporary eraser tool (only for pencil)
+      if ((event.key === 'Control' || event.key === 'Meta') && activeTool === 'pencil') {
+        event.preventDefault();
+        setCtrlKeyDown(true);
+      }
+      
       // Handle Escape key for canceling moves and clearing selections
       if (event.key === 'Escape') {
         if ((selection.active && activeTool === 'select') || 
@@ -319,6 +331,11 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
       if (event.key === 'Alt') {
         setAltKeyDown(false);
       }
+      
+      // Handle Ctrl/Meta key release
+      if (event.key === 'Control' || event.key === 'Meta') {
+        setCtrlKeyDown(false);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -342,6 +359,7 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
     shouldAllowEyedropperOverride,
     setShiftKeyDown,
     setAltKeyDown,
+    setCtrlKeyDown,
     handleRectangularSelectionArrowMovement,
     handleLassoSelectionArrowMovement,
     handleMagicWandSelectionArrowMovement

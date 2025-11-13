@@ -34,6 +34,7 @@ export interface CanvasState {
   mouseButtonDown: boolean;
   shiftKeyDown: boolean;
   altKeyDown: boolean;
+  ctrlKeyDown: boolean;
 
   selectionMode: 'none' | 'dragging' | 'moving';
   pendingSelectionStart: { x: number; y: number } | null;
@@ -72,6 +73,7 @@ export interface CanvasActions {
   setMouseButtonDown: (down: boolean) => void;
   setShiftKeyDown: (down: boolean) => void;
   setAltKeyDown: (down: boolean) => void;
+  setCtrlKeyDown: (down: boolean) => void;
 
   setSelectionMode: (mode: CanvasState['selectionMode']) => void;
   setPendingSelectionStart: (start: { x: number; y: number } | null) => void;

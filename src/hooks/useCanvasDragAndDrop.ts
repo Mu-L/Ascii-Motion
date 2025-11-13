@@ -126,20 +126,21 @@ export const useCanvasDragAndDrop = () => {
   }, [getGridCoordinatesFromEvent, cells, pushCanvasHistory, currentFrameIndex, setMouseButtonDown, setIsDrawing, drawAtPosition, shiftKeyDown]);
 
   // Handle drawing tool mouse move
-  const handleDrawingMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleDrawingMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>, toolOverride?: string) => {
     const { x, y } = getGridCoordinatesFromEvent(event);
+    const tool = toolOverride || activeTool;
     
-    if (isDrawing && (activeTool === 'pencil' || activeTool === 'eraser')) {
+    if (isDrawing && (tool === 'pencil' || tool === 'eraser')) {
       // For drag operations, we want gap-filling to ensure smooth lines
       const { pencilLastPosition } = useToolStore.getState();
       
       if (pencilLastPosition && 
           (Math.abs(x - pencilLastPosition.x) > 1 || Math.abs(y - pencilLastPosition.y) > 1)) {
         // Large distance during drag - fill the gap with a line
-        if (activeTool === 'pencil') {
+        if (tool === 'pencil') {
           // Use brush-aware gap-filling for pencil to respect brush settings
           drawBrushLine(pencilLastPosition.x, pencilLastPosition.y, x, y);
-        } else if (activeTool === 'eraser') {
+        } else if (tool === 'eraser') {
           // Use brush-aware gap-filling for eraser to respect brush size/shape
           eraseBrushLine(pencilLastPosition.x, pencilLastPosition.y, x, y);
         }
@@ -149,15 +150,15 @@ export const useCanvasDragAndDrop = () => {
         setPencilLastPosition({ x, y });
       } else {
         // Normal drag drawing - use regular drawing function
-  handleDrawing(x, y, false); // Continuous stroke
+  handleDrawing(x, y, false, toolOverride); // Continuous stroke
       }
     }
     
     // Handle shift+click line preview for pencil tool
-    if (!isDrawing && (activeTool === 'pencil' || activeTool === 'eraser') && shiftKeyDown) {
+    if (!isDrawing && (tool === 'pencil' || tool === 'eraser') && shiftKeyDown) {
       if (pencilLastPosition) {
         // Get brush settings for current tool
-        const brushSettings = getBrushSettings(activeTool);
+        const brushSettings = getBrushSettings(tool === 'pencil' ? 'pencil' : 'eraser');
         
         // Generate base line from last position to current position using Bresenham
         const linePoints = getLinePoints(pencilLastPosition.x, pencilLastPosition.y, x, y);
@@ -186,7 +187,7 @@ export const useCanvasDragAndDrop = () => {
         setLinePreview(previewPoints);
       } else {
         // No last position yet - show brush pattern at current cell
-        const brushSettings = getBrushSettings(activeTool);
+        const brushSettings = getBrushSettings(tool === 'pencil' ? 'pencil' : 'eraser');
         const brushCells = calculateBrushCells(
           x,
           y,

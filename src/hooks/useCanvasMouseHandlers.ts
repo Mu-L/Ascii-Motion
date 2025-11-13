@@ -30,7 +30,7 @@ export interface MouseHandlers {
 export const useCanvasMouseHandlers = (): MouseHandlers => {
   const { activeTool, clearSelection: clearCanvasSelection, clearLassoSelection, isPlaybackMode } = useToolStore();
   const clearTimelineSelection = useAnimationStore((state) => state.clearSelection);
-  const { canvasRef, altKeyDown, setIsDrawing, setMouseButtonDown, setHoveredCell, pasteMode, updatePastePosition, startPasteDrag, stopPasteDrag, cancelPasteMode, commitPaste } = useCanvasContext();
+  const { canvasRef, altKeyDown, ctrlKeyDown, setIsDrawing, setMouseButtonDown, setHoveredCell, pasteMode, updatePastePosition, startPasteDrag, stopPasteDrag, cancelPasteMode, commitPaste } = useCanvasContext();
   const { getGridCoordinates } = useCanvasDimensions();
   const { width, height, cells, setCanvasData } = useCanvasStore();
   const { moveState, commitMove, isPointInEffectiveSelection, selectionMode } = useCanvasState();
@@ -56,10 +56,15 @@ export const useCanvasMouseHandlers = (): MouseHandlers => {
   const endAsciiDrag = useAsciiTypeStore((state) => state.endDrag);
   const asciiDragState = useAsciiTypeStore((state) => state.dragState);
 
-  // Determine effective tool (Alt key overrides with eyedropper for drawing tools, except gradientfill)
+  // Determine effective tool (Alt key overrides with eyedropper for drawing tools, Ctrl key overrides with eraser for pencil only)
   const drawingTools: ReadonlyArray<Tool> = ['pencil', 'eraser', 'paintbucket', 'rectangle', 'ellipse'];
   const shouldAllowEyedropperOverride = drawingTools.includes(activeTool);
-  const effectiveTool = (altKeyDown && shouldAllowEyedropperOverride) ? 'eyedropper' : activeTool;
+  let effectiveTool = activeTool;
+  if (ctrlKeyDown && activeTool === 'pencil') {
+    effectiveTool = 'eraser';
+  } else if (altKeyDown && shouldAllowEyedropperOverride) {
+    effectiveTool = 'eyedropper';
+  }
 
   // Utility to get grid coordinates from mouse event
   const getGridCoordinatesFromEvent = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -384,7 +389,7 @@ export const useCanvasMouseHandlers = (): MouseHandlers => {
         break;
       default:
         // For basic drawing tools (pencil, eraser, eyedropper, paintbucket)
-        dragAndDropHandlers.handleDrawingMouseMove(event);
+        dragAndDropHandlers.handleDrawingMouseMove(event, effectiveTool);
         break;
     }
   }, [

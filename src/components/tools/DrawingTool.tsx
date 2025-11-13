@@ -21,10 +21,11 @@ export const DrawingTool: React.FC = () => {
  * Drawing Tool Status Component
  * Provides visual feedback about the current drawing tool
  */
-export const DrawingToolStatus: React.FC = () => {
+export const DrawingToolStatus: React.FC<{ tool?: 'pencil' | 'eraser' }> = ({ tool }) => {
   const { activeTool, selectedChar, selectedColor, selectedBgColor, brushSettings } = useToolStore();
+  const effectiveTool = tool || activeTool;
 
-  if (activeTool === 'pencil') {
+  if (effectiveTool === 'pencil') {
     const { size, shape } = brushSettings.pencil;
     const shapeDisplay = getBrushShapeDisplayName(shape);
     return (
@@ -37,7 +38,7 @@ export const DrawingToolStatus: React.FC = () => {
     );
   }
 
-  if (activeTool === 'eraser') {
+  if (effectiveTool === 'eraser') {
     const { size, shape } = brushSettings.eraser;
     const shapeDisplay = getBrushShapeDisplayName(shape);
     return (

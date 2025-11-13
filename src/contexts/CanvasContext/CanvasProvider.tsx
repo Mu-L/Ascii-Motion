@@ -48,6 +48,7 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({
   const [mouseButtonDown, setMouseButtonDown] = useState(false);
   const [shiftKeyDown, setShiftKeyDown] = useState(false);
   const [altKeyDown, setAltKeyDown] = useState(false);
+  const [ctrlKeyDown, setCtrlKeyDown] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState<'none' | 'dragging' | 'moving'>('none');
   const [pendingSelectionStart, setPendingSelectionStart] = useState<{ x: number; y: number } | null>(null);
@@ -187,6 +188,7 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({
     mouseButtonDown,
     shiftKeyDown,
     altKeyDown,
+    ctrlKeyDown,
     selectionMode,
     pendingSelectionStart,
     justCommittedMove,
@@ -206,6 +208,7 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({
     setMouseButtonDown,
     setShiftKeyDown,
     setAltKeyDown,
+    setCtrlKeyDown,
     setSelectionMode,
     setPendingSelectionStart,
     setJustCommittedMove,

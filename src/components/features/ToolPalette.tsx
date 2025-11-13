@@ -85,15 +85,20 @@ const UTILITY_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; desc
 export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
   const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor } = useToolStore();
   const { contiguous, matchChar, matchColor, matchBgColor, setContiguous, setMatchCriteria } = useGradientStore();
-  const { altKeyDown } = useCanvasContext();
+  const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { flipHorizontal, flipVertical } = useFlipUtilities();
   const [showOptions, setShowOptions] = React.useState(true);
   const [showTools, setShowTools] = React.useState(true);
 
-  // Calculate effective tool (Alt key overrides with eyedropper for drawing tools)
+  // Calculate effective tool (Alt key overrides with eyedropper for drawing tools, Ctrl overrides pencil with eraser)
   const drawingTools: Tool[] = ['pencil', 'eraser', 'paintbucket', 'gradientfill', 'rectangle', 'ellipse'];
   const shouldAllowEyedropperOverride = drawingTools.includes(activeTool);
-  const effectiveTool = (altKeyDown && shouldAllowEyedropperOverride) ? 'eyedropper' : activeTool;
+  let effectiveTool = activeTool;
+  if (ctrlKeyDown && activeTool === 'pencil') {
+    effectiveTool = 'eraser';
+  } else if (altKeyDown && shouldAllowEyedropperOverride) {
+    effectiveTool = 'eyedropper';
+  }
 
   // Tools that actually have configurable options. (Removed 'eraser' and 'text' per layout bug fix.)
   const hasOptions = ['rectangle', 'ellipse', 'paintbucket', 'gradientfill', 'magicwand', 'pencil', 'eraser', 'eyedropper'].includes(effectiveTool);

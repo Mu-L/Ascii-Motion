@@ -17,11 +17,12 @@ export interface ToolHotkey {
  * 
  * Usage:
  * - Single key press switches to tool (respects text input protection)
- * - Alt key temporarily activates eyedropper tool for drawing tools  
+ * - Alt key temporarily activates eyedropper tool for drawing tools
+ * - Ctrl key temporarily activates eraser when pencil is active
  * - Easy to update and maintain hotkeys in one place
  */
 export const TOOL_HOTKEYS: ToolHotkey[] = [
-  { tool: 'pencil', key: 'p', displayName: 'P', description: 'Pencil tool hotkey' },
+  { tool: 'pencil', key: 'p', displayName: 'P', description: 'Pencil tool hotkey (Ctrl for temporary eraser)' },
   { tool: 'eraser', key: 'e', displayName: 'E', description: 'Eraser tool hotkey' },
   { tool: 'paintbucket', key: 'f', displayName: 'F', description: 'Fill tool hotkey' },
   { tool: 'select', key: 'm', displayName: 'M', description: 'Rectangular selection hotkey' },
