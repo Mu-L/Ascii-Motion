@@ -141,6 +141,12 @@ interface BezierStore {
   togglePointHandles: (pointId: string) => void;
   
   /**
+   * Enable handles for a point with initial zero-length handles (for drag-to-create)
+   * @param pointId - ID of the point
+   */
+  enableHandlesForDrag: (pointId: string) => void;
+  
+  /**
    * Update the position of an anchor point
    * @param pointId - ID of the point to move
    * @param newPos - New grid position
@@ -164,6 +170,20 @@ interface BezierStore {
    * @param pointId - ID of the anchor point
    */
   breakHandleSymmetry: (pointId: string) => void;
+  
+  /**
+   * Insert a new point on a path segment between two existing points
+   * @param afterPointIndex - Index of the point before the new point
+   * @param position - Grid position for the new point
+   * @param t - Parameter along the segment (0-1) for handle calculation
+   */
+  insertPointOnSegment: (afterPointIndex: number, position: { x: number; y: number }, t: number) => void;
+  
+  /**
+   * Remove an anchor point from the shape
+   * @param pointId - ID of the point to remove
+   */
+  removePoint: (pointId: string) => void;
   
   // ========================================
   // ACTIONS - SELECTION
@@ -404,11 +424,96 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       const point = state.anchorPoints[pointIndex];
       const newHasHandles = !point.hasHandles;
       
+      let handleIn = null;
+      let handleOut = null;
+      
+      if (newHasHandles) {
+        // Auto-generate handles based on neighboring points
+        const prevPoint = pointIndex > 0 ? state.anchorPoints[pointIndex - 1] : null;
+        const nextPoint = pointIndex < state.anchorPoints.length - 1 ? state.anchorPoints[pointIndex + 1] : null;
+        
+        // If shape is closed, wrap around
+        const prevPointWrapped = prevPoint || (state.isClosed && state.anchorPoints.length > 2 ? state.anchorPoints[state.anchorPoints.length - 1] : null);
+        const nextPointWrapped = nextPoint || (state.isClosed && state.anchorPoints.length > 2 ? state.anchorPoints[0] : null);
+        
+        // Calculate handle direction based on neighboring points
+        if (prevPointWrapped && nextPointWrapped) {
+          // We have both neighbors - create smooth curve through all three points
+          const dx = (nextPointWrapped.position.x - prevPointWrapped.position.x) / 2;
+          const dy = (nextPointWrapped.position.y - prevPointWrapped.position.y) / 2;
+          const length = Math.sqrt(dx * dx + dy * dy) * 0.25; // 25% of distance
+          
+          if (length > 0) {
+            const angle = Math.atan2(dy, dx);
+            handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+            handleIn = { x: -handleOut.x, y: -handleOut.y };
+          } else {
+            handleIn = { x: 0, y: 0 };
+            handleOut = { x: 0, y: 0 };
+          }
+        } else if (nextPointWrapped) {
+          // Only have next neighbor
+          const dx = nextPointWrapped.position.x - point.position.x;
+          const dy = nextPointWrapped.position.y - point.position.y;
+          const length = Math.sqrt(dx * dx + dy * dy) * 0.25;
+          
+          if (length > 0) {
+            const angle = Math.atan2(dy, dx);
+            handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+            handleIn = { x: -handleOut.x, y: -handleOut.y };
+          } else {
+            handleIn = { x: 0, y: 0 };
+            handleOut = { x: 0, y: 0 };
+          }
+        } else if (prevPointWrapped) {
+          // Only have previous neighbor
+          const dx = point.position.x - prevPointWrapped.position.x;
+          const dy = point.position.y - prevPointWrapped.position.y;
+          const length = Math.sqrt(dx * dx + dy * dy) * 0.25;
+          
+          if (length > 0) {
+            const angle = Math.atan2(dy, dx);
+            handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+            handleIn = { x: -handleOut.x, y: -handleOut.y };
+          } else {
+            handleIn = { x: 0, y: 0 };
+            handleOut = { x: 0, y: 0 };
+          }
+        } else {
+          // No neighbors - default small handles
+          handleIn = { x: -0.5, y: 0 };
+          handleOut = { x: 0.5, y: 0 };
+        }
+      }
+      
       const updatedPoint: BezierAnchorPoint = {
         ...point,
         hasHandles: newHasHandles,
-        handleIn: newHasHandles ? { x: 0, y: 0 } : null,
-        handleOut: newHasHandles ? { x: 0, y: 0 } : null,
+        handleIn,
+        handleOut,
+        handleSymmetric: true,
+      };
+      
+      const newPoints = [...state.anchorPoints];
+      newPoints[pointIndex] = updatedPoint;
+      
+      return { anchorPoints: newPoints };
+    });
+  },
+  
+  enableHandlesForDrag: (pointId: string) => {
+    set((state) => {
+      const pointIndex = state.anchorPoints.findIndex((p) => p.id === pointId);
+      if (pointIndex === -1) return state;
+      
+      const point = state.anchorPoints[pointIndex];
+      
+      // Enable handles starting at zero length (will be dragged out)
+      const updatedPoint: BezierAnchorPoint = {
+        ...point,
+        hasHandles: true,
+        handleIn: { x: 0, y: 0 },
+        handleOut: { x: 0, y: 0 },
         handleSymmetric: true,
       };
       
@@ -486,12 +591,153 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     });
   },
   
+  insertPointOnSegment: (afterPointIndex: number, position: { x: number; y: number }, t: number) => {
+    set((state) => {
+      const points = state.anchorPoints;
+      if (afterPointIndex < 0 || afterPointIndex >= points.length) return state;
+      
+      const nextIndex = (afterPointIndex + 1) % points.length;
+      if (nextIndex === 0 && !state.isClosed) return state; // Can't insert after last point in open shape
+      
+      const p0 = points[afterPointIndex];
+      const p1 = points[nextIndex];
+      
+      // Calculate smart handles for the new point based on the curve
+      // If both points have handles, we're on a bezier curve
+      let handleIn = null;
+      let handleOut = null;
+      
+      if (p0.hasHandles && p0.handleOut && p1.hasHandles && p1.handleIn) {
+        // On a cubic bezier curve - calculate tangent at point t
+        const p0Out = {
+          x: p0.position.x + p0.handleOut.x,
+          y: p0.position.y + p0.handleOut.y,
+        };
+        const p1In = {
+          x: p1.position.x + p1.handleIn.x,
+          y: p1.position.y + p1.handleIn.y,
+        };
+        
+        // Derivative of cubic bezier: 3(1-t)²(P1-P0) + 6(1-t)t(P2-P1) + 3t²(P3-P2)
+        const t2 = t * t;
+        const mt = 1 - t;
+        const mt2 = mt * mt;
+        
+        const dx = 3 * mt2 * (p0Out.x - p0.position.x) +
+                   6 * mt * t * (p1In.x - p0Out.x) +
+                   3 * t2 * (p1.position.x - p1In.x);
+        const dy = 3 * mt2 * (p0Out.y - p0.position.y) +
+                   6 * mt * t * (p1In.y - p0Out.y) +
+                   3 * t2 * (p1.position.y - p1In.y);
+        
+        const length = Math.sqrt(dx * dx + dy * dy) * 0.15; // Scale down for reasonable handle length
+        if (length > 0) {
+          const angle = Math.atan2(dy, dx);
+          handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+          handleIn = { x: -handleOut.x, y: -handleOut.y };
+        }
+      } else if (p0.hasHandles && p0.handleOut) {
+        // Quadratic curve using only p0's out handle
+        const p0Out = {
+          x: p0.position.x + p0.handleOut.x,
+          y: p0.position.y + p0.handleOut.y,
+        };
+        
+        // Derivative of quadratic: 2(1-t)(P1-P0) + 2t(P2-P1)
+        const dx = 2 * (1 - t) * (p0Out.x - p0.position.x) + 2 * t * (p1.position.x - p0Out.x);
+        const dy = 2 * (1 - t) * (p0Out.y - p0.position.y) + 2 * t * (p1.position.y - p0Out.y);
+        
+        const length = Math.sqrt(dx * dx + dy * dy) * 0.15;
+        if (length > 0) {
+          const angle = Math.atan2(dy, dx);
+          handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+          handleIn = { x: -handleOut.x, y: -handleOut.y };
+        }
+      } else if (p1.hasHandles && p1.handleIn) {
+        // Quadratic curve using only p1's in handle
+        const p1In = {
+          x: p1.position.x + p1.handleIn.x,
+          y: p1.position.y + p1.handleIn.y,
+        };
+        
+        const dx = 2 * (1 - t) * (p1In.x - p0.position.x) + 2 * t * (p1.position.x - p1In.x);
+        const dy = 2 * (1 - t) * (p1In.y - p0.position.y) + 2 * t * (p1.position.y - p1In.y);
+        
+        const length = Math.sqrt(dx * dx + dy * dy) * 0.15;
+        if (length > 0) {
+          const angle = Math.atan2(dy, dx);
+          handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+          handleIn = { x: -handleOut.x, y: -handleOut.y };
+        }
+      } else {
+        // Linear segment - create handles along the line
+        const dx = p1.position.x - p0.position.x;
+        const dy = p1.position.y - p0.position.y;
+        const length = Math.sqrt(dx * dx + dy * dy) * 0.15;
+        
+        if (length > 0) {
+          const angle = Math.atan2(dy, dx);
+          handleOut = { x: Math.cos(angle) * length, y: Math.sin(angle) * length };
+          handleIn = { x: -handleOut.x, y: -handleOut.y };
+        }
+      }
+      
+      const newPoint: BezierAnchorPoint = {
+        id: generateAnchorId(),
+        position: { ...position },
+        hasHandles: handleIn !== null && handleOut !== null,
+        handleIn,
+        handleOut,
+        handleSymmetric: true,
+        selected: false,
+      };
+      
+      const newPoints = [...points];
+      newPoints.splice(afterPointIndex + 1, 0, newPoint);
+      
+      return { anchorPoints: newPoints };
+    });
+  },
+  
+  removePoint: (pointId: string) => {
+    set((state) => {
+      const pointIndex = state.anchorPoints.findIndex((p) => p.id === pointId);
+      if (pointIndex === -1) return state;
+      
+      // Don't allow removing if we'd have fewer than 2 points
+      if (state.anchorPoints.length <= 2) return state;
+      
+      const newPoints = state.anchorPoints.filter((p) => p.id !== pointId);
+      
+      // If we removed a point from a closed shape and now have only 2 points, open it
+      const shouldOpen = state.isClosed && newPoints.length === 2;
+      
+      return { 
+        anchorPoints: newPoints,
+        isClosed: shouldOpen ? false : state.isClosed,
+      };
+    });
+  },
+  
   // ========================================
   // SELECTION ACTIONS
   // ========================================
   
   selectPoint: (pointId: string, addToSelection: boolean) => {
     set((state) => {
+      const targetPoint = state.anchorPoints.find((p) => p.id === pointId);
+      if (!targetPoint) return state;
+      
+      // If shift+clicking an already selected point, toggle it off
+      if (addToSelection && targetPoint.selected) {
+        const newPoints = state.anchorPoints.map((point) => ({
+          ...point,
+          selected: point.id === pointId ? false : point.selected,
+        }));
+        return { anchorPoints: newPoints };
+      }
+      
+      // Otherwise, select the point (and optionally keep other selections)
       const newPoints = state.anchorPoints.map((point) => ({
         ...point,
         selected: point.id === pointId ? true : addToSelection ? point.selected : false,
@@ -572,17 +818,42 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     // For now, just apply raw delta
     
     if (state.isDraggingPoint && state.draggingPointId) {
-      const pointIndex = state.anchorPoints.findIndex((p) => p.id === state.draggingPointId);
-      if (pointIndex !== -1) {
-        const point = state.anchorPoints[pointIndex];
-        const newPos = {
-          x: point.position.x + deltaX,
-          y: point.position.y + deltaY,
-        };
-        get().updatePointPosition(state.draggingPointId, newPos);
+      // Move all selected points together
+      const selectedPoints = state.anchorPoints.filter((p) => p.selected);
+      
+      if (selectedPoints.length > 1) {
+        // Multi-select drag - move all selected points
+        const newPoints = state.anchorPoints.map((point) => {
+          if (point.selected) {
+            return {
+              ...point,
+              position: {
+                x: point.position.x + deltaX,
+                y: point.position.y + deltaY,
+              },
+            };
+          }
+          return point;
+        });
         
-        // Update drag start for next frame
-        set({ dragStartMousePos: { ...gridPos } });
+        set({ 
+          anchorPoints: newPoints,
+          dragStartMousePos: { ...gridPos }
+        });
+      } else {
+        // Single point drag
+        const pointIndex = state.anchorPoints.findIndex((p) => p.id === state.draggingPointId);
+        if (pointIndex !== -1) {
+          const point = state.anchorPoints[pointIndex];
+          const newPos = {
+            x: point.position.x + deltaX,
+            y: point.position.y + deltaY,
+          };
+          get().updatePointPosition(state.draggingPointId, newPos);
+          
+          // Update drag start for next frame
+          set({ dragStartMousePos: { ...gridPos } });
+        }
       }
     } else if (state.isDraggingHandle && state.draggingHandleId) {
       const { pointId, type } = state.draggingHandleId;
