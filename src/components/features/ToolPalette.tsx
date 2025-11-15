@@ -394,13 +394,13 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                       {/* Fill Mode Selector */}
                       <div className="space-y-2">
                         <div className="text-xs text-muted-foreground">Fill Mode:</div>
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant={fillMode === 'constant' ? "default" : "outline"}
                                 size="sm"
-                                className="flex-1 h-7 text-xs"
+                                className="h-7 text-xs px-3"
                                 onClick={() => setFillMode('constant')}
                               >
                                 Constant
@@ -415,7 +415,7 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                               <Button
                                 variant={fillMode === 'palette' ? "default" : "outline"}
                                 size="sm"
-                                className="flex-1 h-7 text-xs"
+                                className="h-7 text-xs px-3"
                                 onClick={() => setFillMode('palette')}
                               >
                                 Palette
@@ -430,7 +430,7 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                               <Button
                                 variant={fillMode === 'autofill' ? "default" : "outline"}
                                 size="sm"
-                                className="flex-1 h-7 text-xs"
+                                className="h-7 text-xs px-3"
                                 onClick={() => setFillMode('autofill')}
                               >
                                 Autofill

@@ -339,7 +339,7 @@ const createDefaultState = (): BezierStoreState => ({
   dragStartShapePos: null,
   draggingPointId: null,
   draggingHandleId: null,
-  fillMode: 'autofill',
+  fillMode: 'constant',
   autofillPaletteId: 'block',
   previewCells: null,
   affectedCellCount: 0,

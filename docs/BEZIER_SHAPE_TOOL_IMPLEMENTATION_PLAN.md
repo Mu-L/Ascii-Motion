@@ -1203,10 +1203,14 @@ if (activeTool === 'beziershape') {
 - [x] Create `src/components/features/InteractiveBezierOverlay.tsx`
 - [x] Implement anchor point rendering and hit testing
 - [x] Implement handle rendering and hit testing
-- [ ] Implement shape dragging (click inside + drag)
-- [ ] Implement multi-select (Shift+Click multiple points)
-- [x] Implement Alt+Click handle toggle
+- [x] Implement multi-select (Shift+Click multiple points) with group dragging
+- [x] Implement Alt+Click handle toggle (with smart/drag differentiation)
 - [x] Implement Alt+Drag handle symmetry breaking
+- [x] Implement Cmd+Click path to insert point (with smart handles)
+- [x] Implement Cmd+Click point to delete point
+- [x] Style handles like gradient tool (white fill, black + white strokes)
+- [x] Implement click+drag for handle creation on new points
+- [ ] Implement shape dragging (click inside + drag)
 - [ ] Implement Shift+Drag handle constraining (horizontal/vertical)
 - [ ] Implement preview character rendering at 95% opacity
 

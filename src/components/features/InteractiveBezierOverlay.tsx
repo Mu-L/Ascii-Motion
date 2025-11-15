@@ -6,10 +6,13 @@
  * points/handles, and manipulating the entire shape.
  */
 
-import React, { useCallback, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 import { useBezierStore } from '../../stores/bezierStore';
 import { useCanvasContext } from '../../contexts/CanvasContext';
 import { useToolStore } from '../../stores/toolStore';
+import { useCanvasStore } from '../../stores/canvasStore';
+import { useCharacterPaletteStore } from '../../stores/characterPaletteStore';
+import { generateBezierPreview } from '../../utils/bezierFillUtils';
 
 export const InteractiveBezierOverlay: React.FC = () => {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -39,6 +42,8 @@ export const InteractiveBezierOverlay: React.FC = () => {
     isDraggingPoint,
     isDraggingHandle,
     isDraggingShape,
+    fillMode,
+    autofillPaletteId,
     addAnchorPoint,
     closeShape,
     togglePointHandles,
@@ -52,7 +57,12 @@ export const InteractiveBezierOverlay: React.FC = () => {
     endDrag,
     insertPointOnSegment,
     removePoint,
+    updatePreview,
   } = useBezierStore();
+
+  const { width, height } = useCanvasStore();
+  const { selectedChar, selectedColor, selectedBgColor } = useToolStore();
+  const { activePalette } = useCharacterPaletteStore();
 
   const effectiveCellWidth = cellWidth * zoom;
   const effectiveCellHeight = cellHeight * zoom;
@@ -90,6 +100,54 @@ export const InteractiveBezierOverlay: React.FC = () => {
       window.removeEventListener('blur', handleBlur);
     };
   }, []);
+
+  /**
+   * Generate and update preview whenever shape changes
+   */
+  useEffect(() => {
+    // Don't generate preview if no points or if not actively drawing/editing
+    if (anchorPoints.length < 2) {
+      updatePreview(new Map(), 0);
+      return;
+    }
+
+    // Generate the preview
+    const { previewCells, affectedCount } = generateBezierPreview(
+      anchorPoints,
+      isClosed,
+      fillMode,
+      width,
+      height,
+      effectiveCellWidth,
+      effectiveCellHeight,
+      zoom,
+      panOffset,
+      selectedChar,
+      selectedColor,
+      selectedBgColor,
+      fillMode === 'palette' ? activePalette.characters : undefined,
+      fillMode === 'autofill' ? autofillPaletteId : undefined
+    );
+
+    // Update the store with the preview
+    updatePreview(previewCells, affectedCount);
+  }, [
+    anchorPoints,
+    isClosed,
+    fillMode,
+    width,
+    height,
+    effectiveCellWidth,
+    effectiveCellHeight,
+    zoom,
+    panOffset,
+    selectedChar,
+    selectedColor,
+    selectedBgColor,
+    activePalette.characters,
+    autofillPaletteId,
+    updatePreview,
+  ]);
 
   /**
    * Convert grid coordinates to pixel coordinates
@@ -824,7 +882,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      style={{ cursor }}
+      style={{ cursor, zIndex: 20 }}
     >
       <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
         {pathElement}

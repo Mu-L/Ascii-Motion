@@ -96,26 +96,40 @@ export function createBezierPath(
     const prevPixel = pointToPixel(prevPoint.position, cellWidth, cellHeight, zoom, panOffset);
     const currPixel = pointToPixel(currPoint.position, cellWidth, cellHeight, zoom, panOffset);
     
-    // Check if both points have handles for a smooth curve
-    if (
-      prevPoint.hasHandles &&
-      prevPoint.handleOut &&
-      currPoint.hasHandles &&
-      currPoint.handleIn
-    ) {
-      // Bezier curve with control points
+    // Determine control points based on which points have handles
+    const prevHasHandle = prevPoint.hasHandles && prevPoint.handleOut;
+    const currHasHandle = currPoint.hasHandles && currPoint.handleIn;
+    
+    if (prevHasHandle && currHasHandle) {
+      // Both points have handles - use cubic bezier curve
       const cp1 = {
-        x: prevPixel.x + prevPoint.handleOut.x * cellWidth * zoom,
-        y: prevPixel.y + prevPoint.handleOut.y * cellHeight * zoom,
+        x: prevPixel.x + prevPoint.handleOut!.x * cellWidth * zoom,
+        y: prevPixel.y + prevPoint.handleOut!.y * cellHeight * zoom,
       };
       const cp2 = {
-        x: currPixel.x + currPoint.handleIn.x * cellWidth * zoom,
-        y: currPixel.y + currPoint.handleIn.y * cellHeight * zoom,
+        x: currPixel.x + currPoint.handleIn!.x * cellWidth * zoom,
+        y: currPixel.y + currPoint.handleIn!.y * cellHeight * zoom,
       };
       
       path.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, currPixel.x, currPixel.y);
+    } else if (prevHasHandle && !currHasHandle) {
+      // Only previous point has a handle - use quadratic curve from prev handle
+      const cp = {
+        x: prevPixel.x + prevPoint.handleOut!.x * cellWidth * zoom,
+        y: prevPixel.y + prevPoint.handleOut!.y * cellHeight * zoom,
+      };
+      
+      path.quadraticCurveTo(cp.x, cp.y, currPixel.x, currPixel.y);
+    } else if (!prevHasHandle && currHasHandle) {
+      // Only current point has a handle - use quadratic curve to curr handle
+      const cp = {
+        x: currPixel.x + currPoint.handleIn!.x * cellWidth * zoom,
+        y: currPixel.y + currPoint.handleIn!.y * cellHeight * zoom,
+      };
+      
+      path.quadraticCurveTo(cp.x, cp.y, currPixel.x, currPixel.y);
     } else {
-      // Straight line
+      // Neither point has handles - straight line
       path.lineTo(currPixel.x, currPixel.y);
     }
   }
@@ -125,27 +139,43 @@ export function createBezierPath(
     const lastPoint = anchorPoints[anchorPoints.length - 1];
     const firstPoint = anchorPoints[0];
     
-    // Check if we need a bezier curve to close the path
-    if (
-      lastPoint.hasHandles &&
-      lastPoint.handleOut &&
-      firstPoint.hasHandles &&
-      firstPoint.handleIn
-    ) {
-      const lastPixel = pointToPixel(lastPoint.position, cellWidth, cellHeight, zoom, panOffset);
-      const firstPixel = pointToPixel(firstPoint.position, cellWidth, cellHeight, zoom, panOffset);
-      
+    const lastPixel = pointToPixel(lastPoint.position, cellWidth, cellHeight, zoom, panOffset);
+    const firstPixel = pointToPixel(firstPoint.position, cellWidth, cellHeight, zoom, panOffset);
+    
+    // Determine control points for closing segment
+    const lastHasHandle = lastPoint.hasHandles && lastPoint.handleOut;
+    const firstHasHandle = firstPoint.hasHandles && firstPoint.handleIn;
+    
+    if (lastHasHandle && firstHasHandle) {
+      // Both points have handles - use cubic bezier curve
       const cp1 = {
-        x: lastPixel.x + lastPoint.handleOut.x * cellWidth * zoom,
-        y: lastPixel.y + lastPoint.handleOut.y * cellHeight * zoom,
+        x: lastPixel.x + lastPoint.handleOut!.x * cellWidth * zoom,
+        y: lastPixel.y + lastPoint.handleOut!.y * cellHeight * zoom,
       };
       const cp2 = {
-        x: firstPixel.x + firstPoint.handleIn.x * cellWidth * zoom,
-        y: firstPixel.y + firstPoint.handleIn.y * cellHeight * zoom,
+        x: firstPixel.x + firstPoint.handleIn!.x * cellWidth * zoom,
+        y: firstPixel.y + firstPoint.handleIn!.y * cellHeight * zoom,
       };
       
       path.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, firstPixel.x, firstPixel.y);
+    } else if (lastHasHandle && !firstHasHandle) {
+      // Only last point has a handle - use quadratic curve
+      const cp = {
+        x: lastPixel.x + lastPoint.handleOut!.x * cellWidth * zoom,
+        y: lastPixel.y + lastPoint.handleOut!.y * cellHeight * zoom,
+      };
+      
+      path.quadraticCurveTo(cp.x, cp.y, firstPixel.x, firstPixel.y);
+    } else if (!lastHasHandle && firstHasHandle) {
+      // Only first point has a handle - use quadratic curve
+      const cp = {
+        x: firstPixel.x + firstPoint.handleIn!.x * cellWidth * zoom,
+        y: firstPixel.y + firstPoint.handleIn!.y * cellHeight * zoom,
+      };
+      
+      path.quadraticCurveTo(cp.x, cp.y, firstPixel.x, firstPixel.y);
     }
+    // If neither has handles, closePath() will draw a straight line automatically
     
     path.closePath();
   }

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { useToolStore } from '../../stores/toolStore';
 import { useGradientStore } from '../../stores/gradientStore';
 import { useAsciiBoxStore } from '../../stores/asciiBoxStore';
+import { useBezierStore } from '../../stores/bezierStore';
 import { useCanvasContext } from '../../contexts/CanvasContext';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -36,6 +37,10 @@ export const CanvasOverlay: React.FC = () => {
     drawnCells: boxDrawnCells,
     rectanglePreview: boxRectanglePreview
   } = useAsciiBoxStore();
+  const {
+    previewCells: bezierPreview,
+    isDrawing: bezierDrawing
+  } = useBezierStore();
   const { canvasBackgroundColor, width, height } = useCanvasStore();
   const { theme } = useTheme();
 
@@ -707,6 +712,40 @@ export const CanvasOverlay: React.FC = () => {
       ctx.globalAlpha = 1.0;
     }
     
+    // Draw Bezier preview overlay (shows filled ASCII in real-time as shape is edited)
+    // Show preview whenever there are preview cells, regardless of drawing state
+    if (bezierPreview && bezierPreview.size > 0) {
+      ctx.globalAlpha = 0.85; // Slightly transparent to distinguish from committed content
+      
+      bezierPreview.forEach((cell, key) => {
+        const [x, y] = key.split(',').map(Number);
+        const pixelX = x * effectiveCellWidth + panOffset.x;
+        const pixelY = y * effectiveCellHeight + panOffset.y;
+
+        // Draw cell background
+        if (cell.bgColor && cell.bgColor !== 'transparent') {
+          ctx.fillStyle = cell.bgColor;
+          ctx.fillRect(pixelX, pixelY, effectiveCellWidth, effectiveCellHeight);
+        }
+
+        // Draw character
+        if (cell.char && cell.char !== ' ') {
+          ctx.fillStyle = cell.color || '#000000';
+          const scaledFontSize = fontMetrics.fontSize * zoom;
+          ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            cell.char, 
+            pixelX + effectiveCellWidth / 2, 
+            pixelY + effectiveCellHeight / 2
+          );
+        }
+      });
+      
+      ctx.globalAlpha = 1.0;
+    }
+    
     // Draw hover cell outline (subtle outline for current cell under cursor)
     if (hoveredCell && hoveredCell.x >= 0 && hoveredCell.x < width && hoveredCell.y >= 0 && hoveredCell.y < height) {
       ctx.strokeStyle = 'rgba(168, 85, 247, 0.5)'; // 50% opacity purple outline
@@ -818,6 +857,8 @@ export const CanvasOverlay: React.FC = () => {
     boxPreview,
     boxDrawnCells,
     boxRectanglePreview,
+    bezierDrawing,
+    bezierPreview,
     hoverPreview,
     hoveredCell,
     canvasBackgroundColor,
