@@ -70,6 +70,7 @@ export type Tool =
   | 'asciitype'
   | 'asciibox'
   | 'brush'
+  | 'beziershape'
   | 'gradientfill'
   | 'fliphorizontal'
   | 'flipvertical';
