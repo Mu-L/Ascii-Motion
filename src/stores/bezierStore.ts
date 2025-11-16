@@ -369,6 +369,38 @@ interface BezierStore {
    * @param frameIndex - The current frame index
    */
   setOriginalFrame: (frameIndex: number) => void;
+  
+  // ========================================
+  // ACTIONS - STATE SNAPSHOT/RESTORE
+  // ========================================
+  
+  /**
+   * Capture full bezier state for undo/redo
+   */
+  captureState: () => {
+    anchorPoints: BezierAnchorPoint[];
+    isClosed: boolean;
+    fillMode: 'constant' | 'palette' | 'autofill';
+    autofillPaletteId: string;
+    fillColorMode: 'current' | 'palette';
+    strokeWidth: number;
+    strokeTaperStart: number;
+    strokeTaperEnd: number;
+  };
+  
+  /**
+   * Restore full bezier state from snapshot
+   */
+  restoreState: (snapshot: {
+    anchorPoints: BezierAnchorPoint[];
+    isClosed: boolean;
+    fillMode: 'constant' | 'palette' | 'autofill';
+    autofillPaletteId: string;
+    fillColorMode: 'current' | 'palette';
+    strokeWidth: number;
+    strokeTaperStart: number;
+    strokeTaperEnd: number;
+  }) => void;
 }
 
 /**
@@ -1152,6 +1184,62 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
   
   setOriginalFrame: (frameIndex: number) => {
     set({ originalFrameIndex: frameIndex });
+  },
+  
+  // ========================================
+  // STATE SNAPSHOT/RESTORE (for undo/redo of commits)
+  // ========================================
+  
+  /**
+   * Capture full bezier state for undo/redo
+   */
+  captureState: () => {
+    const state = get();
+    return {
+      anchorPoints: state.anchorPoints.map(p => ({ ...p })),
+      isClosed: state.isClosed,
+      fillMode: state.fillMode,
+      autofillPaletteId: state.autofillPaletteId,
+      fillColorMode: state.fillColorMode,
+      strokeWidth: state.strokeWidth,
+      strokeTaperStart: state.strokeTaperStart,
+      strokeTaperEnd: state.strokeTaperEnd,
+    };
+  },
+  
+  /**
+   * Restore full bezier state from snapshot
+   */
+  restoreState: (snapshot: {
+    anchorPoints: BezierAnchorPoint[];
+    isClosed: boolean;
+    fillMode: 'constant' | 'palette' | 'autofill';
+    autofillPaletteId: string;
+    fillColorMode: 'current' | 'palette';
+    strokeWidth: number;
+    strokeTaperStart: number;
+    strokeTaperEnd: number;
+  }) => {
+    set({
+      anchorPoints: snapshot.anchorPoints.map(p => ({ ...p })),
+      isClosed: snapshot.isClosed,
+      isDrawing: false,
+      isEditingShape: snapshot.isClosed,
+      fillMode: snapshot.fillMode,
+      autofillPaletteId: snapshot.autofillPaletteId,
+      fillColorMode: snapshot.fillColorMode,
+      strokeWidth: snapshot.strokeWidth,
+      strokeTaperStart: snapshot.strokeTaperStart,
+      strokeTaperEnd: snapshot.strokeTaperEnd,
+      // Reset interaction state
+      isDraggingPoint: false,
+      isDraggingHandle: false,
+      isDraggingShape: false,
+      draggingPointId: null,
+      draggingHandleId: null,
+      dragStartMousePos: null,
+      dragStartShapePos: null,
+    });
   },
 }));
 

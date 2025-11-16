@@ -15,12 +15,32 @@ import { useCharacterPaletteStore } from '../../stores/characterPaletteStore';
 import { useAnimationStore } from '../../stores/animationStore';
 import { usePaletteStore } from '../../stores/paletteStore';
 import { generateBezierPreview } from '../../utils/bezierFillUtils';
-import type { CanvasHistoryAction } from '../../types';
+import type { 
+  BezierCommitHistoryAction,
+  BezierAddPointHistoryAction,
+  BezierMovePointHistoryAction,
+  BezierAdjustHandleHistoryAction,
+  BezierToggleHandlesHistoryAction,
+  BezierDeletePointHistoryAction,
+  BezierCloseShapeHistoryAction,
+} from '../../types';
 
 export const InteractiveBezierOverlay: React.FC = () => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const svgOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const prevToolRef = useRef<string>('beziershape');
+  
+  // Track drag start state for creating history on drag end
+  const dragStartStateRef = useRef<{
+    type: 'point' | 'handle' | null;
+    pointId?: string;
+    handleType?: 'in' | 'out';
+    pointPositions?: Array<{ pointId: string; position: { x: number; y: number } }>;
+    handleIn?: { x: number; y: number } | null;
+    handleOut?: { x: number; y: number } | null;
+    wasSymmetric?: boolean;
+  }>({ type: null });
+  
   const { activeTool, pushToHistory } = useToolStore();
   const { cellWidth, cellHeight, zoom, panOffset } = useCanvasContext();
   
@@ -69,6 +89,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     insertPointOnSegment,
     removePoint,
     updatePreview,
+    captureState,
     commitShape,
     cancelShape,
   } = useBezierStore();
@@ -99,6 +120,9 @@ export const InteractiveBezierOverlay: React.FC = () => {
     }
 
     try {
+      // Capture bezier state BEFORE committing (for undo to restore editing state)
+      const bezierSnapshot = captureState();
+      
       // Store current canvas state for undo
       const originalCells = new Map(cells);
 
@@ -118,12 +142,18 @@ export const InteractiveBezierOverlay: React.FC = () => {
 
       setCanvasData(newCells);
 
-      // Add to history for undo/redo
-      const historyAction: CanvasHistoryAction = {
-        type: 'canvas_edit',
+      // Add to history with full bezier state for granular undo/redo
+      const historyAction: BezierCommitHistoryAction = {
+        type: 'bezier_commit',
         timestamp: Date.now(),
-        description: `Apply bezier shape (${cellsToCommit.size} cells)`,
+        description: `Commit bezier shape (${cellsToCommit.size} cells)`,
         data: {
+          bezierState: {
+            ...bezierSnapshot,
+            selectedChar,
+            selectedColor,
+            selectedBgColor,
+          },
           previousCanvasData: originalCells,
           newCanvasData: newCells,
           frameIndex: currentFrameIndex,
@@ -142,7 +172,18 @@ export const InteractiveBezierOverlay: React.FC = () => {
     } catch (error) {
       console.error('[Bezier] Error committing shape:', error);
     }
-  }, [isClosed, previewCells, cells, currentFrameIndex, commitShape, setCanvasData, pushToHistory]);
+  }, [
+    previewCells, 
+    cells, 
+    currentFrameIndex, 
+    captureState, 
+    commitShape, 
+    setCanvasData, 
+    pushToHistory,
+    selectedChar,
+    selectedColor,
+    selectedBgColor,
+  ]);
 
   /**
    * Cancel the bezier shape without committing
@@ -271,9 +312,26 @@ export const InteractiveBezierOverlay: React.FC = () => {
             console.warn('[Bezier] Cannot delete: would leave less than 2 points');
             return;
           }
-          // Delete each selected point
+          
+          // Delete each selected point and push history for each
           selectedPoints.forEach(point => {
-            removePoint(point.id);
+            const pointIndex = anchorPoints.findIndex(p => p.id === point.id);
+            if (pointIndex !== -1) {
+              removePoint(point.id);
+              
+              // Push history for each deleted point
+              const deleteAction: BezierDeletePointHistoryAction = {
+                type: 'bezier_delete_point',
+                timestamp: Date.now(),
+                description: 'Delete bezier point',
+                data: {
+                  pointIndex,
+                  point: { ...point },
+                  frameIndex: currentFrameIndex,
+                },
+              };
+              pushToHistory(deleteAction);
+            }
           });
         }
       }
@@ -282,7 +340,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     // Use capture phase to intercept events BEFORE they reach UI elements
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeTool, anchorPoints.length, anchorPoints, isClosed, handleCommit, handleCancel, closeShape, removePoint]);
+  }, [activeTool, anchorPoints.length, anchorPoints, isClosed, handleCommit, handleCancel, closeShape, removePoint, currentFrameIndex, pushToHistory]);
 
   /**
    * Auto-commit shape when switching away from bezier tool
@@ -626,12 +684,44 @@ export const InteractiveBezierOverlay: React.FC = () => {
             // Alt + drag = break symmetry
             breakHandleSymmetry(hit.pointId);
           }
+          
+          // Capture initial handle state for history
+          const point = anchorPoints.find((p) => p.id === hit.pointId);
+          if (point) {
+            dragStartStateRef.current = {
+              type: 'handle',
+              pointId: hit.pointId,
+              handleType: hit.handleType,
+              handleIn: point.handleIn ? { ...point.handleIn } : null,
+              handleOut: point.handleOut ? { ...point.handleOut } : null,
+              wasSymmetric: point.handleSymmetric,
+            };
+          }
+          
           const gridPos = pixelToGrid(mouseX, mouseY);
           startDragHandle(hit.pointId, hit.handleType, gridPos);
         } else if (hit.type === 'point') {
           // Cmd + click = delete point
           if (e.metaKey || e.ctrlKey) {
-            removePoint(hit.pointId);
+            const pointToDelete = anchorPoints.find((p) => p.id === hit.pointId);
+            const pointIndex = anchorPoints.findIndex((p) => p.id === hit.pointId);
+            
+            if (pointToDelete && pointIndex !== -1) {
+              removePoint(hit.pointId);
+              
+              // Push history for delete
+              const deleteAction: BezierDeletePointHistoryAction = {
+                type: 'bezier_delete_point',
+                timestamp: Date.now(),
+                description: 'Delete bezier point',
+                data: {
+                  pointIndex,
+                  point: { ...pointToDelete },
+                  frameIndex: currentFrameIndex,
+                },
+              };
+              pushToHistory(deleteAction);
+            }
             return;
           }
           
@@ -655,7 +745,21 @@ export const InteractiveBezierOverlay: React.FC = () => {
           
           // Check if clicking first point while drawing (to close shape)
           if (isDrawing && anchorPoints.length > 2 && hit.pointId === anchorPoints[0].id) {
+            const wasClosed = isClosed;
             closeShape();
+            
+            // Push history for closing shape
+            const closeAction: BezierCloseShapeHistoryAction = {
+              type: 'bezier_close_shape',
+              timestamp: Date.now(),
+              description: 'Close bezier shape',
+              data: {
+                wasClosed,
+                nowClosed: true,
+                frameIndex: currentFrameIndex,
+              },
+            };
+            pushToHistory(closeAction);
             return;
           }
 
@@ -675,6 +779,17 @@ export const InteractiveBezierOverlay: React.FC = () => {
               // If already selected, don't change selection (allows multi-drag to start)
             }
           }
+          
+          // Capture initial positions of all selected points for history
+          const selectedPoints = anchorPoints.filter((p) => p.selected);
+          const pointsToTrack = selectedPoints.length > 0 ? selectedPoints : [clickedPoint].filter(Boolean);
+          dragStartStateRef.current = {
+            type: 'point',
+            pointPositions: pointsToTrack.map((p) => ({
+              pointId: p!.id,
+              position: { ...p!.position },
+            })),
+          };
           
           // Start dragging point
           const gridPos = pixelToGrid(mouseX, mouseY);
@@ -723,6 +838,20 @@ export const InteractiveBezierOverlay: React.FC = () => {
         
         // addAnchorPoint now returns the ID of the newly created point
         const newPointId = addAnchorPoint(gridPos.x, gridPos.y, withHandles);
+        
+        // Push history for adding point
+        const addPointAction: BezierAddPointHistoryAction = {
+          type: 'bezier_add_point',
+          timestamp: Date.now(),
+          description: 'Add bezier anchor point',
+          data: {
+            pointId: newPointId,
+            position: { x: gridPos.x, y: gridPos.y },
+            withHandles,
+            frameIndex: currentFrameIndex,
+          },
+        };
+        pushToHistory(addPointAction);
         
         // Track that we just placed a point - if mouse moves we'll add handles
         setPlacementStartPos(gridPos);
@@ -776,6 +905,19 @@ export const InteractiveBezierOverlay: React.FC = () => {
         
         // If moved more than 0.1 grid units, it's a drag - enable zero-length handles
         if (dist > 0.1) {
+          // Capture initial handle state before enabling handles
+          const point = anchorPoints.find((p) => p.id === altClickPointId);
+          if (point) {
+            dragStartStateRef.current = {
+              type: 'handle',
+              pointId: altClickPointId,
+              handleType: 'out',
+              handleIn: point.handleIn ? { ...point.handleIn } : null,
+              handleOut: point.handleOut ? { ...point.handleOut } : null,
+              wasSymmetric: point.handleSymmetric,
+            };
+          }
+          
           enableHandlesForDrag(altClickPointId);
           startDragHandle(altClickPointId, 'out', altClickStartPos);
           
@@ -793,6 +935,19 @@ export const InteractiveBezierOverlay: React.FC = () => {
         
         // If moved more than 0.1 grid units, add handles and start dragging
         if (dist > 0.1) {
+          // Capture initial handle state before enabling handles
+          const point = anchorPoints.find((p) => p.id === placingPointId);
+          if (point) {
+            dragStartStateRef.current = {
+              type: 'handle',
+              pointId: placingPointId,
+              handleType: 'out',
+              handleIn: point.handleIn ? { ...point.handleIn } : null,
+              handleOut: point.handleOut ? { ...point.handleOut } : null,
+              wasSymmetric: point.handleSymmetric,
+            };
+          }
+          
           // Enable handles starting at zero length (cursor position)
           enableHandlesForDrag(placingPointId);
           
@@ -869,7 +1024,35 @@ export const InteractiveBezierOverlay: React.FC = () => {
   const handleMouseUp = useCallback(() => {
     // If Alt+clicked point without dragging, use smart handle generation
     if (altClickPointId && altClickStartPos) {
+      // Capture before state
+      const point = anchorPoints.find((p) => p.id === altClickPointId);
+      const previousHasHandles = point?.hasHandles ?? false;
+      const previousHandleIn = point?.handleIn ? { ...point.handleIn } : null;
+      const previousHandleOut = point?.handleOut ? { ...point.handleOut } : null;
+      
       togglePointHandles(altClickPointId);
+      
+      // Push history for toggle handles
+      const pointAfter = anchorPoints.find((p) => p.id === altClickPointId);
+      if (pointAfter) {
+        const toggleAction: BezierToggleHandlesHistoryAction = {
+          type: 'bezier_toggle_handles',
+          timestamp: Date.now(),
+          description: 'Toggle bezier handles',
+          data: {
+            pointId: altClickPointId,
+            previousHasHandles,
+            newHasHandles: pointAfter.hasHandles,
+            previousHandleIn,
+            previousHandleOut,
+            newHandleIn: pointAfter.handleIn ? { ...pointAfter.handleIn } : null,
+            newHandleOut: pointAfter.handleOut ? { ...pointAfter.handleOut } : null,
+            frameIndex: currentFrameIndex,
+          },
+        };
+        pushToHistory(toggleAction);
+      }
+      
       setAltClickPointId(null);
       setAltClickStartPos(null);
     }
@@ -877,6 +1060,88 @@ export const InteractiveBezierOverlay: React.FC = () => {
     // Clear placement tracking
     setPlacingPointId(null);
     setPlacementStartPos(null);
+    
+    // Push history for completed drags
+    if (isDraggingPoint && dragStartStateRef.current.type === 'point') {
+      const { pointPositions } = dragStartStateRef.current;
+      if (pointPositions && pointPositions.length > 0) {
+        // Get current positions
+        const newPositions = pointPositions.map(({ pointId }) => {
+          const point = anchorPoints.find((p) => p.id === pointId);
+          return {
+            pointId,
+            position: point ? { ...point.position } : { x: 0, y: 0 },
+          };
+        });
+        
+        // Only push history if positions actually changed
+        const hasChanged = newPositions.some((newPos, idx) => {
+          const oldPos = pointPositions[idx].position;
+          return Math.abs(newPos.position.x - oldPos.x) > 0.001 || 
+                 Math.abs(newPos.position.y - oldPos.y) > 0.001;
+        });
+        
+        if (hasChanged) {
+          const moveAction: BezierMovePointHistoryAction = {
+            type: 'bezier_move_point',
+            timestamp: Date.now(),
+            description: pointPositions.length > 1 
+              ? `Move ${pointPositions.length} bezier points` 
+              : 'Move bezier point',
+            data: {
+              pointIds: pointPositions.map((p) => p.pointId),
+              previousPositions: pointPositions,
+              newPositions,
+              frameIndex: currentFrameIndex,
+            },
+          };
+          pushToHistory(moveAction);
+        }
+      }
+    }
+    
+    if (isDraggingHandle && dragStartStateRef.current.type === 'handle') {
+      const { pointId, handleType, handleIn, handleOut, wasSymmetric } = dragStartStateRef.current;
+      if (pointId && handleType) {
+        const point = anchorPoints.find((p) => p.id === pointId);
+        if (point) {
+          const previousHandle = handleType === 'out' ? handleOut : handleIn;
+          const newHandle = handleType === 'out' ? point.handleOut : point.handleIn;
+          const previousOppositeHandle = handleType === 'out' ? handleIn : handleOut;
+          const newOppositeHandle = handleType === 'out' ? point.handleIn : point.handleOut;
+          
+          // Only push history if handle actually changed
+          if (previousHandle && newHandle) {
+            const hasChanged = 
+              Math.abs(newHandle.x - previousHandle.x) > 0.001 || 
+              Math.abs(newHandle.y - previousHandle.y) > 0.001;
+            
+            if (hasChanged) {
+              const adjustHandleAction: BezierAdjustHandleHistoryAction = {
+                type: 'bezier_adjust_handle',
+                timestamp: Date.now(),
+                description: 'Adjust bezier handle',
+                data: {
+                  pointId,
+                  handleType,
+                  previousHandle,
+                  newHandle,
+                  previousOppositeHandle: previousOppositeHandle ?? null,
+                  newOppositeHandle: newOppositeHandle ?? null,
+                  previousSymmetric: wasSymmetric ?? true,
+                  newSymmetric: point.handleSymmetric,
+                  frameIndex: currentFrameIndex,
+                },
+              };
+              pushToHistory(adjustHandleAction);
+            }
+          }
+        }
+      }
+    }
+    
+    // Reset drag state tracking
+    dragStartStateRef.current = { type: null };
     
     if (isDraggingPoint || isDraggingHandle || isDraggingShape) {
       endDrag();
@@ -887,8 +1152,11 @@ export const InteractiveBezierOverlay: React.FC = () => {
     isDraggingPoint,
     isDraggingHandle,
     isDraggingShape,
+    anchorPoints,
+    currentFrameIndex,
     togglePointHandles,
     endDrag,
+    pushToHistory,
   ]);
 
   /**

@@ -2,6 +2,7 @@ import React from 'react';
 import { useToolStore } from '../../stores/toolStore';
 import { useGradientStore } from '../../stores/gradientStore';
 import { useBezierStore } from '../../stores/bezierStore';
+import { useAnimationStore } from '../../stores/animationStore';
 import { useCanvasContext } from '../../contexts/CanvasContext';
 import { useFlipUtilities } from '../../hooks/useFlipUtilities';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { GradientIcon } from '../icons';
 import { BrushControls } from './BrushControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AUTOFILL_PALETTES } from '../../constants/bezierAutofill';
+import type { BezierCloseShapeHistoryAction } from '../../types';
 import { 
   PenTool,
   Eraser, 
@@ -89,9 +91,10 @@ const UTILITY_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; desc
 ];
 
 export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
-  const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor } = useToolStore();
+  const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor, pushToHistory } = useToolStore();
   const { contiguous, matchChar, matchColor, matchBgColor, setContiguous, setMatchCriteria } = useGradientStore();
   const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId, fillColorMode, setFillColorMode, strokeWidth, strokeTaperStart, strokeTaperEnd, setStrokeWidth, setStrokeTaperStart, setStrokeTaperEnd, isClosed, toggleClosedShape } = useBezierStore();
+  const { currentFrameIndex } = useAnimationStore();
   const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { flipHorizontal, flipVertical } = useFlipUtilities();
   const [showOptions, setShowOptions] = React.useState(true);
@@ -130,6 +133,25 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
     
     // Default tool switching behavior
     setActiveTool(tool.id);
+  };
+
+  // Handle close shape toggle with history tracking
+  const handleCloseShapeToggle = (checked: boolean) => {
+    const wasClosed = isClosed;
+    toggleClosedShape();
+    
+    // Push history for closing/opening shape
+    const closeAction: BezierCloseShapeHistoryAction = {
+      type: 'bezier_close_shape',
+      timestamp: Date.now(),
+      description: checked ? 'Close bezier shape' : 'Open bezier shape',
+      data: {
+        wasClosed,
+        nowClosed: checked,
+        frameIndex: currentFrameIndex,
+      },
+    };
+    pushToHistory(closeAction);
   };
 
   const ToolButton: React.FC<{ tool: { id: Tool; name: string; icon: React.ReactNode; description: string } }> = ({ tool }) => {
@@ -492,7 +514,7 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                           <Switch
                             id="close-shape"
                             checked={isClosed}
-                            onCheckedChange={toggleClosedShape}
+                            onCheckedChange={handleCloseShapeToggle}
                             tabIndex={-1}
                             onKeyDown={(e) => {
                               // Prevent all keyboard events on this switch
