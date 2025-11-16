@@ -84,7 +84,7 @@ export const useToolBehavior = () => {
       case 'magicwand':
         return 'cursor-magicwand'; // Custom magic wand cursor
       case 'pencil':
-        return 'cursor-pen'; // Custom pen cursor
+        return 'cursor-brush'; // Custom brush cursor with hotspot at bottom-left
       case 'eraser':
         return 'cursor-eraser'; // Custom eraser cursor
       case 'paintbucket':
@@ -94,7 +94,7 @@ export const useToolBehavior = () => {
       case 'ellipse':
         return 'cursor-crosshair';
       case 'beziershape':
-        return 'cursor-crosshair'; // Precise point placement for Bézier shape tool
+        return 'cursor-bezier'; // Custom bezier pen cursor (will be overridden in InteractiveBezierOverlay for +/- modifiers)
       case 'eyedropper':
         return 'cursor-eyedropper'; // Custom eyedropper icon cursor
       case 'text':

@@ -1111,28 +1111,38 @@ export const InteractiveBezierOverlay: React.FC = () => {
     });
   }, [anchorPoints, gridToPixel, effectiveCellWidth, effectiveCellHeight]);
 
+  // Determine cursor class based on cmd key and hover state
+  const getCursorClass = useCallback(() => {
+    if (activeTool !== 'beziershape') return '';
+    
+    // If dragging anything, show grabbing cursor
+    if (isDraggingPoint || isDraggingHandle || isDraggingShape) {
+      return 'cursor-grabbing';
+    }
+    
+    // If Cmd key is pressed and hovering over something
+    if (cmdKeyPressed && hoverState) {
+      if (hoverState.type === 'path') {
+        // Hovering over path with Cmd = add point
+        return 'cursor-bezier-add';
+      } else if (hoverState.type === 'point') {
+        // Hovering over point with Cmd = remove point
+        return 'cursor-bezier-remove';
+      }
+    }
+    
+    // Default bezier cursor
+    return 'cursor-bezier';
+  }, [activeTool, cmdKeyPressed, hoverState, isDraggingPoint, isDraggingHandle, isDraggingShape]);
+
   // Only show overlay when bezier tool is active
   if (activeTool !== 'beziershape') {
     return null;
   }
 
-  // Determine cursor based on state
-  let cursor = 'crosshair';
-  if (isDraggingPoint || isDraggingHandle || isDraggingShape) {
-    cursor = 'grabbing';
-  } else if (hoverState) {
-    if (hoverState.type === 'point') {
-      // Cmd+hover over point = delete (use 'not-allowed' as visual indicator)
-      cursor = 'not-allowed';
-    } else if (hoverState.type === 'path') {
-      // Cmd+hover over path = add point (use 'copy' as it shows a plus)
-      cursor = 'copy';
-    }
-  }
-
   // Calculate bounds to expand the interactive area for off-screen elements
+  // Note: cursor is now handled via CSS classes (getCursorClass)
   let containerStyle: React.CSSProperties = { 
-    cursor, 
     zIndex: 20,
     position: 'absolute',
     inset: 0
@@ -1196,7 +1206,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
   return (
     <div
       ref={overlayRef}
-      className="pointer-events-auto"
+      className={`pointer-events-auto ${getCursorClass()}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
