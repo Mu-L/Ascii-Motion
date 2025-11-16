@@ -17,6 +17,7 @@ import type { Cell } from '../types';
 export interface BezierSessionSettings {
   fillMode: 'constant' | 'palette' | 'autofill';
   autofillPaletteId: string;
+  fillColorMode: 'current' | 'palette';
 }
 
 /**
@@ -100,6 +101,9 @@ interface BezierStore {
   
   /** ID of the autofill palette to use ('block', 'ansi', etc.) */
   autofillPaletteId: string;
+  
+  /** Selected fill color mode */
+  fillColorMode: 'current' | 'palette';
   
   // ========================================
   // PREVIEW DATA
@@ -280,6 +284,12 @@ interface BezierStore {
    */
   setAutofillPaletteId: (paletteId: string) => void;
   
+  /**
+   * Set the fill color mode
+   * @param mode - 'current' or 'palette'
+   */
+  setFillColorMode: (mode: 'current' | 'palette') => void;
+  
   // ========================================
   // ACTIONS - PREVIEW
   // ========================================
@@ -335,6 +345,7 @@ interface BezierStoreState {
   draggingHandleId: { pointId: string; type: 'in' | 'out' } | null;
   fillMode: 'constant' | 'palette' | 'autofill';
   autofillPaletteId: string;
+  fillColorMode: 'current' | 'palette';
   previewCells: Map<string, Cell> | null;
   affectedCellCount: number;
   originalFrameIndex: number | null;
@@ -357,6 +368,7 @@ const createDefaultState = (): BezierStoreState => ({
   draggingHandleId: null,
   fillMode: 'constant',
   autofillPaletteId: 'block',
+  fillColorMode: 'current',
   previewCells: null,
   affectedCellCount: 0,
   originalFrameIndex: null,
@@ -728,12 +740,14 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       
       const newPoints = state.anchorPoints.filter((p) => p.id !== pointId);
       
-      // If we removed a point from a closed shape and now have only 2 points, open it
+      // If we removed a point from a closed shape and now have only 2 points, open it and resume drawing
       const shouldOpen = state.isClosed && newPoints.length === 2;
       
       return { 
         anchorPoints: newPoints,
         isClosed: shouldOpen ? false : state.isClosed,
+        isDrawing: shouldOpen ? true : state.isDrawing,
+        isEditingShape: shouldOpen ? false : state.isEditingShape,
       };
     });
   },
@@ -932,6 +946,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       const sessionSettings: BezierSessionSettings = {
         fillMode: mode,
         autofillPaletteId: state.autofillPaletteId,
+        fillColorMode: state.fillColorMode,
       };
       
       return {
@@ -947,10 +962,27 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       const sessionSettings: BezierSessionSettings = {
         fillMode: state.fillMode,
         autofillPaletteId: paletteId,
+        fillColorMode: state.fillColorMode,
       };
       
       return {
         autofillPaletteId: paletteId,
+        sessionSettings
+      };
+    });
+  },
+  
+  setFillColorMode: (mode: 'current' | 'palette') => {
+    set((state) => {
+      // Save to session settings for persistence
+      const sessionSettings: BezierSessionSettings = {
+        fillMode: state.fillMode,
+        autofillPaletteId: state.autofillPaletteId,
+        fillColorMode: mode,
+      };
+      
+      return {
+        fillColorMode: mode,
         sessionSettings
       };
     });
@@ -976,6 +1008,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const currentSettings: BezierSessionSettings = {
       fillMode: state.fillMode,
       autofillPaletteId: state.autofillPaletteId,
+      fillColorMode: state.fillColorMode,
     };
     
     // Reset state after commit, but preserve fill settings
@@ -983,6 +1016,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       ...createDefaultState(),
       fillMode: currentSettings.fillMode,
       autofillPaletteId: currentSettings.autofillPaletteId,
+      fillColorMode: currentSettings.fillColorMode,
       sessionSettings: currentSettings,
     });
     
@@ -996,6 +1030,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const currentSettings: BezierSessionSettings = {
       fillMode: state.fillMode,
       autofillPaletteId: state.autofillPaletteId,
+      fillColorMode: state.fillColorMode,
     };
     
     // Reset state but preserve fill settings
@@ -1003,6 +1038,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       ...createDefaultState(),
       fillMode: currentSettings.fillMode,
       autofillPaletteId: currentSettings.autofillPaletteId,
+      fillColorMode: currentSettings.fillColorMode,
       sessionSettings: currentSettings,
     });
   },
@@ -1014,9 +1050,11 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const settingsToUse = state.sessionSettings ? {
       fillMode: state.sessionSettings.fillMode,
       autofillPaletteId: state.sessionSettings.autofillPaletteId,
+      fillColorMode: state.sessionSettings.fillColorMode,
     } : {
       fillMode: 'constant' as const,
       autofillPaletteId: 'block',
+      fillColorMode: 'current' as const,
     };
     
     set({

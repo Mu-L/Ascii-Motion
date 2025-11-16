@@ -90,7 +90,7 @@ const UTILITY_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; desc
 export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
   const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor } = useToolStore();
   const { contiguous, matchChar, matchColor, matchBgColor, setContiguous, setMatchCriteria } = useGradientStore();
-  const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId } = useBezierStore();
+  const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId, fillColorMode, setFillColorMode } = useBezierStore();
   const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { flipHorizontal, flipVertical } = useFlipUtilities();
   const [showOptions, setShowOptions] = React.useState(true);
@@ -452,6 +452,35 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                           </Select>
                         </div>
                       )}
+                      
+                      {/* Fill Color Mode Selector */}
+                      <div className="space-y-2">
+                        <Label htmlFor="fill-color-mode" className="text-xs text-muted-foreground">
+                          Fill Color:
+                        </Label>
+                        <Select value={fillColorMode} onValueChange={(value) => setFillColorMode(value as 'current' | 'palette')}>
+                          <SelectTrigger id="fill-color-mode" className="w-full h-8 text-xs [&>span]:text-left">
+                            <SelectValue placeholder="Select fill color mode...">
+                              {fillColorMode === 'current' && 'Current Color'}
+                              {fillColorMode === 'palette' && 'Palette'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent align="start">
+                            <SelectItem value="current" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Current Color</span>
+                                <span className="text-muted-foreground text-[10px]">Applies the current color to all cells</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="palette" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Palette</span>
+                                <span className="text-muted-foreground text-[10px]">Maps palette colors by overlap amount</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   )}
                   

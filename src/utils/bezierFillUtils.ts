@@ -5,10 +5,13 @@
  * 1. Constant Fill - Simple point-in-path test
  * 2. Palette Fill - Overlap percentage mapped to palette characters
  * 3. Autofill - 9-region detection with intelligent character selection
+ * 
+ * Also supports color palette mapping for fill color mode
  */
 
 import type { Cell } from '../types';
 import type { BezierAnchorPoint } from '../stores/bezierStore';
+import type { ColorPalette } from '../types/palette';
 import { createBezierPath, getIntegerBounds } from './bezierPathUtils';
 import {
   getSharedCanvas,
@@ -17,6 +20,26 @@ import {
   detectCellRegions,
 } from './bezierAutofillUtils';
 import { getCharacterForPattern } from '../constants/bezierAutofill';
+
+/**
+ * Helper function to map overlap percentage to color from a palette
+ * @param overlapPercentage - The percentage of cell overlap (0-100)
+ * @param colorPalette - The color palette to map from
+ * @returns The color hex value from the palette
+ */
+function mapOverlapToColor(overlapPercentage: number, colorPalette: ColorPalette): string {
+  if (colorPalette.colors.length === 0) {
+    return '#FFFFFF'; // Default to white if no colors
+  }
+  
+  // Map percentage to palette index
+  const paletteIndex = Math.min(
+    Math.floor((overlapPercentage / 100) * colorPalette.colors.length),
+    colorPalette.colors.length - 1
+  );
+  
+  return colorPalette.colors[paletteIndex].value;
+}
 
 /**
  * Fill cells using constant fill mode
@@ -31,8 +54,10 @@ import { getCharacterForPattern } from '../constants/bezierAutofill';
  * @param zoom - Current zoom level
  * @param panOffset - Pan offset in pixels
  * @param selectedChar - Character to fill with
- * @param selectedColor - Text color to apply
+ * @param selectedColor - Text color to apply (when fillColorMode is 'current')
  * @param selectedBgColor - Background color to apply
+ * @param fillColorMode - Color fill mode ('current' or 'palette')
+ * @param colorPalette - Color palette for palette mode (optional)
  * @returns Map of cell keys to Cell objects
  */
 export function fillConstant(
@@ -46,7 +71,9 @@ export function fillConstant(
   panOffset: { x: number; y: number },
   selectedChar: string,
   selectedColor: string,
-  selectedBgColor: string
+  selectedBgColor: string,
+  fillColorMode: 'current' | 'palette' = 'current',
+  colorPalette?: ColorPalette
 ): Map<string, Cell> {
   const filledCells = new Map<string, Cell>();
 
@@ -74,10 +101,17 @@ export function fillConstant(
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       if (isCellInside(x, y, path, ctx, cellWidth, cellHeight, zoom, panOffset)) {
+        // Determine color based on fill color mode
+        let color = selectedColor;
+        if (fillColorMode === 'palette' && colorPalette) {
+          // For constant fill, cell is 100% inside
+          color = mapOverlapToColor(100, colorPalette);
+        }
+        
         const key = `${x},${y}`;
         filledCells.set(key, {
           char: selectedChar,
-          color: selectedColor,
+          color,
           bgColor: selectedBgColor,
         });
       }
@@ -100,8 +134,10 @@ export function fillConstant(
  * @param zoom - Current zoom level
  * @param panOffset - Pan offset in pixels
  * @param palette - Array of characters to use (ordered from empty to full)
- * @param selectedColor - Text color to apply
+ * @param selectedColor - Text color to apply (when fillColorMode is 'current')
  * @param selectedBgColor - Background color to apply
+ * @param fillColorMode - Color fill mode ('current' or 'palette')
+ * @param colorPalette - Color palette for palette mode (optional)
  * @returns Map of cell keys to Cell objects
  */
 export function fillPalette(
@@ -115,7 +151,9 @@ export function fillPalette(
   panOffset: { x: number; y: number },
   palette: string[],
   selectedColor: string,
-  selectedBgColor: string
+  selectedBgColor: string,
+  fillColorMode: 'current' | 'palette' = 'current',
+  colorPalette?: ColorPalette
 ): Map<string, Cell> {
   const filledCells = new Map<string, Cell>();
 
@@ -165,10 +203,16 @@ export function fillPalette(
           palette.length - 1
         );
 
+        // Determine color based on fill color mode
+        let color = selectedColor;
+        if (fillColorMode === 'palette' && colorPalette) {
+          color = mapOverlapToColor(overlapPercentage, colorPalette);
+        }
+
         const key = `${x},${y}`;
         filledCells.set(key, {
           char: palette[paletteIndex],
-          color: selectedColor,
+          color,
           bgColor: selectedBgColor,
         });
       }
@@ -191,8 +235,10 @@ export function fillPalette(
  * @param zoom - Current zoom level
  * @param panOffset - Pan offset in pixels
  * @param paletteId - ID of the autofill palette to use ('block', 'ansi', etc.)
- * @param selectedColor - Text color to apply
+ * @param selectedColor - Text color to apply (when fillColorMode is 'current')
  * @param selectedBgColor - Background color to apply
+ * @param fillColorMode - Color fill mode ('current' or 'palette')
+ * @param colorPalette - Color palette for palette mode (optional)
  * @returns Map of cell keys to Cell objects
  */
 export function fillAutofill(
@@ -206,7 +252,9 @@ export function fillAutofill(
   panOffset: { x: number; y: number },
   paletteId: string,
   selectedColor: string,
-  selectedBgColor: string
+  selectedBgColor: string,
+  fillColorMode: 'current' | 'palette' = 'current',
+  colorPalette?: ColorPalette
 ): Map<string, Cell> {
   const filledCells = new Map<string, Cell>();
 
@@ -248,10 +296,19 @@ export function fillAutofill(
       if (filledRegions.size > 0) {
         const character = getCharacterForPattern(paletteId, filledRegions);
 
+        // Determine color based on fill color mode
+        let color = selectedColor;
+        if (fillColorMode === 'palette' && colorPalette) {
+          // For autofill, use number of filled regions as approximation of overlap
+          // 9 regions total, so percentage = (filled / 9) * 100
+          const overlapPercentage = (filledRegions.size / 9) * 100;
+          color = mapOverlapToColor(overlapPercentage, colorPalette);
+        }
+
         const key = `${x},${y}`;
         filledCells.set(key, {
           char: character,
-          color: selectedColor,
+          color,
           bgColor: selectedBgColor,
         });
       }
@@ -275,10 +332,12 @@ export function fillAutofill(
  * @param zoom - Zoom level
  * @param panOffset - Pan offset
  * @param selectedChar - Selected character for constant mode
- * @param selectedColor - Text color
+ * @param selectedColor - Text color (when fillColorMode is 'current')
  * @param selectedBgColor - Background color
  * @param palette - Character palette for palette mode (optional)
  * @param autofillPaletteId - Palette ID for autofill mode (optional)
+ * @param fillColorMode - Color fill mode ('current' or 'palette')
+ * @param colorPalette - Color palette for palette color mode (optional)
  * @returns Object with preview cells and affected cell count
  */
 export function generateBezierPreview(
@@ -295,7 +354,9 @@ export function generateBezierPreview(
   selectedColor: string,
   selectedBgColor: string,
   palette?: string[],
-  autofillPaletteId?: string
+  autofillPaletteId?: string,
+  fillColorMode: 'current' | 'palette' = 'current',
+  colorPalette?: ColorPalette
 ): { previewCells: Map<string, Cell>; affectedCount: number } {
   let previewCells: Map<string, Cell>;
 
@@ -312,7 +373,9 @@ export function generateBezierPreview(
         panOffset,
         selectedChar,
         selectedColor,
-        selectedBgColor
+        selectedBgColor,
+        fillColorMode,
+        colorPalette
       );
       break;
 
@@ -332,7 +395,9 @@ export function generateBezierPreview(
           panOffset,
           palette,
           selectedColor,
-          selectedBgColor
+          selectedBgColor,
+          fillColorMode,
+          colorPalette
         );
       }
       break;
@@ -350,7 +415,9 @@ export function generateBezierPreview(
         panOffset,
         paletteIdToUse,
         selectedColor,
-        selectedBgColor
+        selectedBgColor,
+        fillColorMode,
+        colorPalette
       );
       break;
     }

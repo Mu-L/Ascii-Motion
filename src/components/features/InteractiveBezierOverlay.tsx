@@ -13,6 +13,7 @@ import { useToolStore } from '../../stores/toolStore';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useCharacterPaletteStore } from '../../stores/characterPaletteStore';
 import { useAnimationStore } from '../../stores/animationStore';
+import { usePaletteStore } from '../../stores/paletteStore';
 import { generateBezierPreview } from '../../utils/bezierFillUtils';
 import type { CanvasHistoryAction } from '../../types';
 
@@ -47,6 +48,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     isDraggingShape,
     fillMode,
     autofillPaletteId,
+    fillColorMode,
     previewCells,
     addAnchorPoint,
     closeShape,
@@ -71,9 +73,16 @@ export const InteractiveBezierOverlay: React.FC = () => {
   const { selectedChar, selectedColor, selectedBgColor } = useToolStore();
   const { activePalette } = useCharacterPaletteStore();
   const { currentFrameIndex } = useAnimationStore();
+  const { getActivePalette, activePaletteId, customPalettes } = usePaletteStore();
 
   const effectiveCellWidth = cellWidth * zoom;
   const effectiveCellHeight = cellHeight * zoom;
+
+  // Get the active color palette (uses currently selected palette from right toolbar)
+  // Re-fetch when palette ID changes OR when custom palettes are edited
+  const colorPalette = useMemo(() => {
+    return getActivePalette();
+  }, [getActivePalette, activePaletteId, customPalettes]);
 
   /**
    * Commit the bezier shape to the canvas
@@ -237,12 +246,27 @@ export const InteractiveBezierOverlay: React.FC = () => {
         e.preventDefault();
         // Cancel works at any time (closed or not)
         handleCancel();
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        // Delete all selected points
+        const selectedPoints = anchorPoints.filter(p => p.selected);
+        if (selectedPoints.length > 0) {
+          // Don't allow deleting all points if it would leave less than 2
+          if (anchorPoints.length - selectedPoints.length < 2) {
+            console.warn('[Bezier] Cannot delete: would leave less than 2 points');
+            return;
+          }
+          // Delete each selected point
+          selectedPoints.forEach(point => {
+            removePoint(point.id);
+          });
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTool, anchorPoints.length, isClosed, handleCommit, handleCancel, closeShape]);
+  }, [activeTool, anchorPoints.length, anchorPoints, isClosed, handleCommit, handleCancel, closeShape, removePoint]);
 
   /**
    * Generate and update preview whenever shape changes
@@ -269,7 +293,9 @@ export const InteractiveBezierOverlay: React.FC = () => {
       selectedColor,
       selectedBgColor,
       fillMode === 'palette' ? activePalette.characters : undefined,
-      fillMode === 'autofill' ? autofillPaletteId : undefined
+      fillMode === 'autofill' ? autofillPaletteId : undefined,
+      fillColorMode,
+      colorPalette || undefined
     );
 
     // Update the store with the preview
@@ -289,6 +315,8 @@ export const InteractiveBezierOverlay: React.FC = () => {
     selectedBgColor,
     activePalette.characters,
     autofillPaletteId,
+    fillColorMode,
+    colorPalette,
     updatePreview,
   ]);
 
