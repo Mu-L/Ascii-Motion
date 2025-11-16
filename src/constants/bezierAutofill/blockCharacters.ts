@@ -252,9 +252,19 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
       description: 'Top-center edge'
     },
     {
+      regions: new Set(['TC', 'MR']),
+      character: '▐',
+      description: 'Top-center + right middle diagonal'
+    },
+    {
       regions: new Set(['BC', 'MC']),
       character: '▄',
       description: 'Bottom-center edge'
+    },
+    {
+      regions: new Set(['ML', 'BC']),
+      character: '▖',
+      description: 'Middle-left + bottom-center diagonal'
     },
     {
       regions: new Set(['ML', 'MC']),
@@ -265,6 +275,21 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
       regions: new Set(['MR', 'MC']),
       character: '▐',
       description: 'Right-center edge'
+    },
+    {
+      regions: new Set(['TR', 'BR']),
+      character: '▐',
+      description: 'Right edge - top and bottom corners'
+    },
+    {
+      regions: new Set(['BL', 'BR']),
+      character: '▄',
+      description: 'Bottom edge - left and right corners'
+    },
+    {
+      regions: new Set(['MR', 'BC']),
+      character: '▗',
+      description: 'Middle-right + bottom-center diagonal'
     },
     
     // ========================================
@@ -353,6 +378,11 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
       regions: new Set(['TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR']),
       character: '▟',
       description: 'All but top-left region'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC']),
+      character: '▟',
+      description: 'All but top-left and bottom-right corners'
     },
     
     // ========================================
@@ -644,6 +674,31 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
     // 7-REGION PATTERNS (almost full sides)
     // ========================================
     {
+      regions: new Set(['TL', 'ML', 'MC', 'BL', 'BC', 'BR']),
+      character: '▙',
+      description: '7 regions - missing TR (left side + bottom)'
+    },
+    {
+      regions: new Set(['TR', 'MC', 'MR', 'BL', 'BC', 'BR']),
+      character: '▟',
+      description: '7 regions - missing TL (right side + bottom)'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'MC', 'MR', 'BL', 'BC', 'BR']),
+      character: '▟',
+      description: '7 regions - missing TL (right heavy + bottom)'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'MC', 'BL', 'BC', 'BR']),
+      character: '▙',
+      description: '7 regions - missing TR (left heavy + bottom)'
+    },
+    {
+      regions: new Set(['TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR']),
+      character: '▟',
+      description: '7 regions - missing TL and TC (bottom heavy + right)'
+    },
+    {
       regions: new Set(['TL', 'TC', 'TR', 'ML', 'MC', 'MR', 'BL']),
       character: '█',
       description: '7 regions - missing BC and BR'
@@ -887,6 +942,20 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
     },
     
     // ========================================
+    // ADDITIONAL 4-REGION PATTERNS (discovered from testing)
+    // ========================================
+    {
+      regions: new Set(['TL', 'MC', 'BC', 'BR']),
+      character: '▚',
+      description: '4 regions - diagonal corners with center + bottom-center'
+    },
+    {
+      regions: new Set(['TL', 'MC', 'MR', 'BR']),
+      character: '▚',
+      description: '4 regions - diagonal corners with center + middle-right'
+    },
+    
+    // ========================================
     // 8-REGION PATTERNS (near-complete)
     // ========================================
     {
@@ -982,6 +1051,229 @@ export const BLOCK_CHARACTERS_PALETTE: AutofillPalette = {
       regions: new Set(['BR', 'TC']),
       character: '▗',
       description: 'Bottom-right corner with top-center'
+    },
+    {
+      regions: new Set(['TL', 'BL']),
+      character: '▌',
+      description: '2 regions - left edge (top-left + bottom-left)'
+    },
+    
+    // ========================================
+    // ADDITIONAL 5-REGION PATTERNS (discovered from testing)
+    // ========================================
+    {
+      regions: new Set(['TL', 'TC', 'TR', 'MR', 'BR']),
+      character: '▛',
+      description: '5 regions - top row + right side corners'
+    },
+    {
+      regions: new Set(['ML', 'MR', 'BL', 'BC', 'BR']),
+      character: '▄',
+      description: '5 regions - bottom row + middle sides'
+    },
+    {
+      regions: new Set(['TR', 'MR', 'BL', 'BC', 'BR']),
+      character: '▟',
+      description: '5 regions - right side + bottom row left'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'MR', 'BC', 'BR']),
+      character: '▐',
+      description: 'Right edge with top and bottom centers'
+    },
+    
+    // ========================================
+    // ADDITIONAL 6-REGION PATTERNS (discovered from testing)
+    // ========================================
+    {
+      regions: new Set(['TL', 'TC', 'TR', 'ML', 'MC', 'BL']),
+      character: '▛',
+      description: 'Top row + left column + center, missing right column'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'MR', 'BL', 'BC', 'BR']),
+      character: '▟',
+      description: 'Top-right corner + bottom row + center'
+    },
+    {
+      regions: new Set(['TL', 'ML', 'MC', 'MR', 'BC', 'BR']),
+      character: '▙',
+      description: '6 regions - left side + center + bottom-right'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'MC', 'MR', 'BR']),
+      character: '█',
+      description: '6 regions - top + middle sides + center + bottom-right'
+    },
+    {
+      regions: new Set(['TR', 'ML', 'MC', 'MR', 'BC', 'BR']),
+      character: '▟',
+      description: '6 regions - top-right + middle band + bottom row right side'
+    },
+    
+    // ========================================
+    // ADDITIONAL 7-REGION PATTERNS (discovered from testing)
+    // ========================================
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'MC', 'MR', 'BC', 'BR']),
+      character: '█',
+      description: '7 regions - top-left heavy with bottom-right'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'ML', 'MR', 'BL', 'BC', 'BR']),
+      character: '█',
+      description: '7 regions - missing top-left and center'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'MC', 'MR', 'BL', 'BC']),
+      character: '█',
+      description: '7 regions - missing top-right and bottom-right corners'
+    },
+    
+    // ========================================
+    // ADDITIONAL 3-REGION PATTERNS
+    // ========================================
+    {
+      regions: new Set(['TR', 'BC', 'BR']),
+      character: '▟',
+      description: 'Top-right corner + bottom row right side'
+    },
+    {
+      regions: new Set(['TC', 'MR', 'BR']),
+      character: '▐',
+      description: 'Top-center + right column bottom'
+    },
+    {
+      regions: new Set(['TR', 'ML', 'MC']),
+      character: '▚',
+      description: 'Top-right corner + middle-left + center'
+    },
+    {
+      regions: new Set(['TC', 'TR', 'ML']),
+      character: '▛',
+      description: 'Top row right side + middle-left'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'MR']),
+      character: '▀',
+      description: '3 regions - top row left side + middle-right'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'BL']),
+      character: '▌',
+      description: '3 regions - left corners + top center'
+    },
+    {
+      regions: new Set(['MR', 'BL', 'BC']),
+      character: '▟',
+      description: 'Middle-right + bottom row left side'
+    },
+    {
+      regions: new Set(['MC', 'MR', 'BL']),
+      character: '▚',
+      description: 'Center + middle-right + bottom-left diagonal'
+    },
+    {
+      regions: new Set(['TL', 'BC', 'BR']),
+      character: '▚',
+      description: 'Top-left corner + bottom row right side'
+    },
+    {
+      regions: new Set(['TL', 'MC', 'MR']),
+      character: '▚',
+      description: 'Top-left corner + center + right middle diagonal'
+    },
+    {
+      regions: new Set(['ML', 'BC', 'BR']),
+      character: '▄',
+      description: 'Middle-left + bottom row right side'
+    },
+    {
+      regions: new Set(['ML', 'MC', 'BR']),
+      character: '▚',
+      description: 'Middle-left + center + bottom-right diagonal'
+    },
+    
+    // ========================================
+    // ADDITIONAL 4-REGION PATTERNS
+    // ========================================
+    {
+      regions: new Set(['TL', 'ML', 'MC', 'BL']),
+      character: '▌',
+      description: '4 regions - left column with center'
+    },
+    {
+      regions: new Set(['TR', 'MC', 'MR', 'BR']),
+      character: '▐',
+      description: '4 regions - right side with center'
+    },
+    
+    // ========================================
+    // ADDITIONAL 5-REGION PATTERNS
+    // ========================================
+    {
+      regions: new Set(['TR', 'ML', 'MC', 'MR', 'BL']),
+      character: '▞',
+      description: 'Diagonal split with center - top-right to bottom-left'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'MC', 'MR', 'BR']),
+      character: '▚',
+      description: 'Diagonal pattern - top-left corner + center + bottom-right corner'
+    },
+    {
+      regions: new Set(['TL', 'ML', 'MC', 'MR', 'BR']),
+      character: '▙',
+      description: '5 regions - top-left + middle band + bottom-right'
+    },
+    {
+      regions: new Set(['TL', 'ML', 'BL', 'BC', 'BR']),
+      character: '▌',
+      description: '5 regions - left column + bottom row right side'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'TR', 'ML', 'BL']),
+      character: '▛',
+      description: '5 regions - top row + left column'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'BL', 'BC']),
+      character: '▛',
+      description: '5 regions - top left area + bottom center'
+    },
+    
+    // ========================================
+    // ADDITIONAL 6-REGION PATTERNS
+    // ========================================
+    {
+      regions: new Set(['TC', 'TR', 'ML', 'MC', 'MR', 'BL']),
+      character: '▙',
+      description: 'Top-right + middle band + bottom-left'
+    },
+    {
+      regions: new Set(['TR', 'ML', 'MC', 'MR', 'BL', 'BC']),
+      character: '▚',
+      description: 'Diagonal heavy with middle and bottom center'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'TR', 'MC', 'MR', 'BR']),
+      character: '▛',
+      description: 'Top row + center + right column'
+    },
+    {
+      regions: new Set(['TL', 'TC', 'ML', 'MC', 'MR', 'BL']),
+      character: '▙',
+      description: '6 regions - top left area + middle band'
+    },
+    {
+      regions: new Set(['TL', 'ML', 'MC', 'MR', 'BL', 'BC']),
+      character: '▌',
+      description: '6 regions - left column + middle/bottom center'
+    },
+    {
+      regions: new Set(['TC', 'ML', 'MC', 'BL', 'BC', 'BR']),
+      character: '▙',
+      description: '6 regions - bottom heavy with top center'
     },
     
     // ========================================
