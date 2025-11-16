@@ -24,9 +24,6 @@ export interface RegionPattern {
   /** The character to use when this pattern matches */
   character: string;
   
-  /** Priority when multiple patterns match (higher = prefer) */
-  priority: number;
-  
   /** Human-readable description for documentation */
   description?: string;
 }

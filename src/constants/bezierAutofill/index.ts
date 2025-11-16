@@ -58,18 +58,6 @@ export function getPaletteDisplayInfo(): Array<{ id: string; name: string; descr
 }
 
 /**
- * Build a pattern matching map from a palette's patterns
- * Organizes patterns by priority for efficient matching
- * 
- * @param palette - The palette to build a map from
- * @returns Sorted array of patterns (highest priority first)
- */
-export function buildPatternMap(palette: AutofillPalette): RegionPattern[] {
-  // Sort patterns by priority (descending) for best-match-first strategy
-  return [...palette.patterns].sort((a, b) => b.priority - a.priority);
-}
-
-/**
  * Check if a region pattern matches a set of filled regions
  * 
  * @param pattern - The pattern to check
@@ -109,10 +97,8 @@ export function getCharacterForPattern(
     return ' ';
   }
   
-  const sortedPatterns = buildPatternMap(palette);
-  
-  // Find first matching pattern (already sorted by priority)
-  for (const pattern of sortedPatterns) {
+  // Find exact matching pattern
+  for (const pattern of palette.patterns) {
     if (doesPatternMatch(pattern, filledRegions)) {
       return pattern.character;
     }
