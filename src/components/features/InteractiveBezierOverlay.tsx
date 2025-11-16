@@ -50,6 +50,9 @@ export const InteractiveBezierOverlay: React.FC = () => {
     fillMode,
     autofillPaletteId,
     fillColorMode,
+    strokeWidth,
+    strokeTaperStart,
+    strokeTaperEnd,
     previewCells,
     addAnchorPoint,
     closeShape,
@@ -312,7 +315,10 @@ export const InteractiveBezierOverlay: React.FC = () => {
       fillMode === 'palette' ? activePalette.characters : undefined,
       fillMode === 'autofill' ? autofillPaletteId : undefined,
       fillColorMode,
-      colorPalette || undefined
+      colorPalette || undefined,
+      strokeWidth,
+      strokeTaperStart,
+      strokeTaperEnd
     );
 
     // Update the store with the preview
@@ -334,6 +340,9 @@ export const InteractiveBezierOverlay: React.FC = () => {
     autofillPaletteId,
     fillColorMode,
     colorPalette,
+    strokeWidth,
+    strokeTaperStart,
+    strokeTaperEnd,
     updatePreview,
   ]);
 

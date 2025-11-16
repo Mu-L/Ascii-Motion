@@ -18,6 +18,9 @@ export interface BezierSessionSettings {
   fillMode: 'constant' | 'palette' | 'autofill';
   autofillPaletteId: string;
   fillColorMode: 'current' | 'palette';
+  strokeWidth: number;
+  strokeTaperStart: number;
+  strokeTaperEnd: number;
 }
 
 /**
@@ -104,6 +107,19 @@ interface BezierStore {
   
   /** Selected fill color mode */
   fillColorMode: 'current' | 'palette';
+  
+  // ========================================
+  // STROKE CONFIGURATION
+  // ========================================
+  
+  /** Stroke width in grid units (for open paths) */
+  strokeWidth: number;
+  
+  /** Taper amount at start of stroke (0 = no taper, 1 = taper to point) */
+  strokeTaperStart: number;
+  
+  /** Taper amount at end of stroke (0 = no taper, 1 = taper to point) */
+  strokeTaperEnd: number;
   
   // ========================================
   // PREVIEW DATA
@@ -291,6 +307,28 @@ interface BezierStore {
   setFillColorMode: (mode: 'current' | 'palette') => void;
   
   // ========================================
+  // ACTIONS - STROKE SETTINGS
+  // ========================================
+  
+  /**
+   * Set the stroke width for open paths
+   * @param width - Width in grid units
+   */
+  setStrokeWidth: (width: number) => void;
+  
+  /**
+   * Set the taper amount at start of stroke
+   * @param taper - 0 to 1 (0 = no taper, 1 = taper to point)
+   */
+  setStrokeTaperStart: (taper: number) => void;
+  
+  /**
+   * Set the taper amount at end of stroke
+   * @param taper - 0 to 1 (0 = no taper, 1 = taper to point)
+   */
+  setStrokeTaperEnd: (taper: number) => void;
+  
+  // ========================================
   // ACTIONS - PREVIEW
   // ========================================
   
@@ -346,6 +384,9 @@ interface BezierStoreState {
   fillMode: 'constant' | 'palette' | 'autofill';
   autofillPaletteId: string;
   fillColorMode: 'current' | 'palette';
+  strokeWidth: number;
+  strokeTaperStart: number;
+  strokeTaperEnd: number;
   previewCells: Map<string, Cell> | null;
   affectedCellCount: number;
   originalFrameIndex: number | null;
@@ -369,6 +410,9 @@ const createDefaultState = (): BezierStoreState => ({
   fillMode: 'constant',
   autofillPaletteId: 'block',
   fillColorMode: 'current',
+  strokeWidth: 1.0,
+  strokeTaperStart: 0.0,
+  strokeTaperEnd: 0.0,
   previewCells: null,
   affectedCellCount: 0,
   originalFrameIndex: null,
@@ -380,6 +424,20 @@ const createDefaultState = (): BezierStoreState => ({
 let nextAnchorId = 1;
 function generateAnchorId(): string {
   return `bezier-anchor-${nextAnchorId++}`;
+}
+
+/**
+ * Helper to create session settings from current state
+ */
+function createSessionSettings(state: BezierStoreState): BezierSessionSettings {
+  return {
+    fillMode: state.fillMode,
+    autofillPaletteId: state.autofillPaletteId,
+    fillColorMode: state.fillColorMode,
+    strokeWidth: state.strokeWidth,
+    strokeTaperStart: state.strokeTaperStart,
+    strokeTaperEnd: state.strokeTaperEnd,
+  };
 }
 
 /**
@@ -945,48 +1003,64 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
   
   setFillMode: (mode: 'constant' | 'palette' | 'autofill') => {
     set((state) => {
-      // Save to session settings for persistence
-      const sessionSettings: BezierSessionSettings = {
-        fillMode: mode,
-        autofillPaletteId: state.autofillPaletteId,
-        fillColorMode: state.fillColorMode,
-      };
-      
+      const newState = { ...state, fillMode: mode };
       return {
         fillMode: mode,
-        sessionSettings
+        sessionSettings: createSessionSettings(newState)
       };
     });
   },
   
   setAutofillPaletteId: (paletteId: string) => {
     set((state) => {
-      // Save to session settings for persistence
-      const sessionSettings: BezierSessionSettings = {
-        fillMode: state.fillMode,
-        autofillPaletteId: paletteId,
-        fillColorMode: state.fillColorMode,
-      };
-      
+      const newState = { ...state, autofillPaletteId: paletteId };
       return {
         autofillPaletteId: paletteId,
-        sessionSettings
+        sessionSettings: createSessionSettings(newState)
       };
     });
   },
   
   setFillColorMode: (mode: 'current' | 'palette') => {
     set((state) => {
-      // Save to session settings for persistence
-      const sessionSettings: BezierSessionSettings = {
-        fillMode: state.fillMode,
-        autofillPaletteId: state.autofillPaletteId,
-        fillColorMode: mode,
-      };
-      
+      const newState = { ...state, fillColorMode: mode };
       return {
         fillColorMode: mode,
-        sessionSettings
+        sessionSettings: createSessionSettings(newState)
+      };
+    });
+  },
+  
+  // ========================================
+  // STROKE ACTIONS
+  // ========================================
+  
+  setStrokeWidth: (width: number) => {
+    set((state) => {
+      const newState = { ...state, strokeWidth: Math.max(0.1, Math.min(10, width)) };
+      return {
+        strokeWidth: newState.strokeWidth,
+        sessionSettings: createSessionSettings(newState)
+      };
+    });
+  },
+  
+  setStrokeTaperStart: (taper: number) => {
+    set((state) => {
+      const newState = { ...state, strokeTaperStart: Math.max(0, Math.min(1, taper)) };
+      return {
+        strokeTaperStart: newState.strokeTaperStart,
+        sessionSettings: createSessionSettings(newState)
+      };
+    });
+  },
+  
+  setStrokeTaperEnd: (taper: number) => {
+    set((state) => {
+      const newState = { ...state, strokeTaperEnd: Math.max(0, Math.min(1, taper)) };
+      return {
+        strokeTaperEnd: newState.strokeTaperEnd,
+        sessionSettings: createSessionSettings(newState)
       };
     });
   },
@@ -1008,11 +1082,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const cellsToCommit = state.previewCells || new Map();
     
     // Save current settings before reset
-    const currentSettings: BezierSessionSettings = {
-      fillMode: state.fillMode,
-      autofillPaletteId: state.autofillPaletteId,
-      fillColorMode: state.fillColorMode,
-    };
+    const currentSettings = createSessionSettings(state);
     
     // Reset state after commit, but preserve fill settings
     set({
@@ -1020,6 +1090,9 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       fillMode: currentSettings.fillMode,
       autofillPaletteId: currentSettings.autofillPaletteId,
       fillColorMode: currentSettings.fillColorMode,
+      strokeWidth: currentSettings.strokeWidth,
+      strokeTaperStart: currentSettings.strokeTaperStart,
+      strokeTaperEnd: currentSettings.strokeTaperEnd,
       sessionSettings: currentSettings,
     });
     
@@ -1030,11 +1103,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const state = get();
     
     // Save current settings before reset
-    const currentSettings: BezierSessionSettings = {
-      fillMode: state.fillMode,
-      autofillPaletteId: state.autofillPaletteId,
-      fillColorMode: state.fillColorMode,
-    };
+    const currentSettings = createSessionSettings(state);
     
     // Reset state but preserve fill settings
     set({
@@ -1042,6 +1111,9 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       fillMode: currentSettings.fillMode,
       autofillPaletteId: currentSettings.autofillPaletteId,
       fillColorMode: currentSettings.fillColorMode,
+      strokeWidth: currentSettings.strokeWidth,
+      strokeTaperStart: currentSettings.strokeTaperStart,
+      strokeTaperEnd: currentSettings.strokeTaperEnd,
       sessionSettings: currentSettings,
     });
   },

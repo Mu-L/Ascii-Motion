@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import type { Tool } from '../../types';
 import { getToolTooltipText } from '../../constants/hotkeys';
 
@@ -90,7 +91,7 @@ const UTILITY_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; desc
 export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
   const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor } = useToolStore();
   const { contiguous, matchChar, matchColor, matchBgColor, setContiguous, setMatchCriteria } = useGradientStore();
-  const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId, fillColorMode, setFillColorMode } = useBezierStore();
+  const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId, fillColorMode, setFillColorMode, strokeWidth, strokeTaperStart, strokeTaperEnd, setStrokeWidth, setStrokeTaperStart, setStrokeTaperEnd, isClosed } = useBezierStore();
   const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { flipHorizontal, flipVertical } = useFlipUtilities();
   const [showOptions, setShowOptions] = React.useState(true);
@@ -481,6 +482,74 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                           </SelectContent>
                         </Select>
                       </div>
+                      
+                      {/* Stroke Controls - Only shown for open paths */}
+                      {!isClosed && (
+                        <>
+                          {/* Stroke Width Slider */}
+                          <div className="space-y-2 pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-width" className="text-xs text-muted-foreground">
+                                Stroke Width:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {strokeWidth.toFixed(1)}
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-width"
+                              min={0.1}
+                              max={10}
+                              step={0.1}
+                              value={strokeWidth}
+                              onValueChange={setStrokeWidth}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          {/* Taper Start Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-taper-start" className="text-xs text-muted-foreground">
+                                Taper Start:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {(strokeTaperStart * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-taper-start"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={strokeTaperStart}
+                              onValueChange={setStrokeTaperStart}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          {/* Taper End Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-taper-end" className="text-xs text-muted-foreground">
+                                Taper End:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {(strokeTaperEnd * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-taper-end"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={strokeTaperEnd}
+                              onValueChange={setStrokeTaperEnd}
+                              className="w-full"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   

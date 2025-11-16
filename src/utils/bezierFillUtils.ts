@@ -20,6 +20,7 @@ import {
   detectCellRegions,
 } from './bezierAutofillUtils';
 import { getCharacterForPattern } from '../constants/bezierAutofill';
+import { generateStrokeOutline } from './bezierStrokeUtils';
 
 /**
  * Helper function to map overlap percentage to color from a palette
@@ -356,15 +357,45 @@ export function generateBezierPreview(
   palette?: string[],
   autofillPaletteId?: string,
   fillColorMode: 'current' | 'palette' = 'current',
-  colorPalette?: ColorPalette
+  colorPalette?: ColorPalette,
+  strokeWidth: number = 1.0,
+  strokeTaperStart: number = 0.0,
+  strokeTaperEnd: number = 0.0
 ): { previewCells: Map<string, Cell>; affectedCount: number } {
+  // If path is open and has stroke, convert stroke to closed polygon for filling
+  let effectiveAnchorPoints = anchorPoints;
+  let effectiveIsClosed = isClosed;
+
+  if (!isClosed && strokeWidth > 0 && anchorPoints.length >= 2) {
+    // Generate stroke outline as a closed polygon
+    const strokeOutline = generateStrokeOutline(
+      anchorPoints,
+      strokeWidth,
+      strokeTaperStart,
+      strokeTaperEnd,
+      32 // segments per curve for smooth stroke
+    );
+
+    // Convert outline points back to anchor points format for filling
+    effectiveAnchorPoints = strokeOutline.map((point, index) => ({
+      id: `stroke_${index}`,
+      position: point,
+      handleIn: index > 0 ? strokeOutline[index - 1] : point,
+      handleOut: index < strokeOutline.length - 1 ? strokeOutline[index + 1] : point,
+      hasHandles: false,
+      handleSymmetric: false,
+      selected: false,
+    }));
+    effectiveIsClosed = true; // Stroke outline is always closed
+  }
+
   let previewCells: Map<string, Cell>;
 
   switch (fillMode) {
     case 'constant':
       previewCells = fillConstant(
-        anchorPoints,
-        isClosed,
+        effectiveAnchorPoints,
+        effectiveIsClosed,
         canvasWidth,
         canvasHeight,
         cellWidth,
@@ -385,8 +416,8 @@ export function generateBezierPreview(
         previewCells = new Map();
       } else {
         previewCells = fillPalette(
-          anchorPoints,
-          isClosed,
+          effectiveAnchorPoints,
+          effectiveIsClosed,
           canvasWidth,
           canvasHeight,
           cellWidth,
@@ -405,8 +436,8 @@ export function generateBezierPreview(
     case 'autofill': {
       const paletteIdToUse = autofillPaletteId || 'block';
       previewCells = fillAutofill(
-        anchorPoints,
-        isClosed,
+        effectiveAnchorPoints,
+        effectiveIsClosed,
         canvasWidth,
         canvasHeight,
         cellWidth,
