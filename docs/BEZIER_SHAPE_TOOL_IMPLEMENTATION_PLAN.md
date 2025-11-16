@@ -1465,6 +1465,68 @@ const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement
 
 ---
 
+### Issue: Cannot Escape/Enter from Unclosed Shape (Fixed 2025-11-15)
+
+**Symptom**: When creating a bezier shape, if the user hadn't closed the shape yet (by clicking the first point), pressing Escape or Enter had no effect. The user was forced to either close the shape first or manually switch tools to cancel.
+
+**Root Cause**: The keyboard event handler in `InteractiveBezierOverlay.tsx` had an overly restrictive condition that only listened for keyboard events when `isClosed === true`. This meant the keyboard shortcuts were completely inactive during the initial drawing phase.
+
+```typescript
+// OLD (BROKEN):
+React.useEffect(() => {
+  // Only handle keys when bezier tool is active and shape is closed
+  if (activeTool !== 'beziershape' || !isClosed) return;
+  // ...
+}, [activeTool, isClosed, handleCommit, handleCancel]);
+```
+
+**The Fix**: Changed the condition to check for `anchorPoints.length > 0` instead of `isClosed`, and added smart behavior for Enter key:
+
+```typescript
+// NEW (FIXED):
+React.useEffect(() => {
+  // Only handle keys when bezier tool is active and there are anchor points
+  if (activeTool !== 'beziershape' || anchorPoints.length === 0) return;
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // ... input check ...
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Only commit if shape is closed
+      if (isClosed) {
+        handleCommit();
+      } else {
+        // If not closed, close the shape first then commit
+        closeShape();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Cancel works at any time (closed or not)
+      handleCancel();
+    }
+  };
+  // ...
+}, [activeTool, anchorPoints.length, isClosed, handleCommit, handleCancel, closeShape]);
+```
+
+**Behavioral Changes**:
+- **Escape**: Now works at ANY point during shape creation (whether open or closed). Immediately cancels and clears all anchor points.
+- **Enter on Open Shape**: Automatically closes the shape first, then commits it to the canvas.
+- **Enter on Closed Shape**: Commits the shape immediately (same as before).
+
+**User Experience Improvements**:
+1. Users can quickly cancel an in-progress shape without needing to close it first
+2. Users can commit an open shape with a single Enter press (auto-closes and commits)
+3. More forgiving workflow that matches expectations from other drawing tools
+
+**Lessons Learned**:
+- When implementing keyboard shortcuts for stateful tools, ensure shortcuts work at ALL relevant states, not just the "complete" state
+- Consider providing smart helper behavior (like auto-closing before commit) to reduce the number of steps users need to take
+- Document the expected behavior at each state in the implementation plan to catch these issues during initial development
+
+---
+
 ## 🤝 Implementation Notes
 
 **Recommended Implementation Order**:

@@ -214,8 +214,8 @@ export const InteractiveBezierOverlay: React.FC = () => {
    * Handle Enter (commit) and Escape (cancel) keyboard shortcuts
    */
   React.useEffect(() => {
-    // Only handle keys when bezier tool is active and shape is closed
-    if (activeTool !== 'beziershape' || !isClosed) return;
+    // Only handle keys when bezier tool is active and there are anchor points
+    if (activeTool !== 'beziershape' || anchorPoints.length === 0) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input
@@ -225,16 +225,23 @@ export const InteractiveBezierOverlay: React.FC = () => {
 
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleCommit();
+        // Only commit if shape is closed
+        if (isClosed) {
+          handleCommit();
+        } else {
+          // If not closed, close the shape first then commit
+          closeShape();
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        // Cancel works at any time (closed or not)
         handleCancel();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTool, isClosed, handleCommit, handleCancel]);
+  }, [activeTool, anchorPoints.length, isClosed, handleCommit, handleCancel, closeShape]);
 
   /**
    * Generate and update preview whenever shape changes
