@@ -824,7 +824,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     });
   },
   
-  updateDrag: (gridPos: { x: number; y: number }, _shiftKey: boolean) => {
+  updateDrag: (gridPos: { x: number; y: number }, shiftKey: boolean) => {
     const state = get();
     
     if (!state.dragStartMousePos) return;
@@ -833,8 +833,9 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
     const deltaX = gridPos.x - state.dragStartMousePos.x;
     const deltaY = gridPos.y - state.dragStartMousePos.y;
     
-    // TODO: Implement shift-key constraints (snap to 45 degrees, etc.) using _shiftKey parameter
+    // TODO: Implement shift-key constraints (snap to 45 degrees, etc.) using shiftKey parameter
     // For now, just apply raw delta
+    void shiftKey; // Acknowledge parameter for future use
     
     if (state.isDraggingPoint && state.draggingPointId) {
       // Move all selected points together

@@ -411,7 +411,7 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ className = '' }) => {
     }
     // Delegate to existing canvas mouse handlers for all other cases
     handleMouseDown(e);
-  }, [activeTool, handleMouseDown]);
+  }, [activeTool, handleMouseDown, canvasRef, cellWidth, cellHeight, zoom, panOffset]);
 
   return (
     <div className={`canvas-grid-container ${className} h-full flex flex-col relative`}>

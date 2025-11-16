@@ -38,8 +38,7 @@ export const CanvasOverlay: React.FC = () => {
     rectanglePreview: boxRectanglePreview
   } = useAsciiBoxStore();
   const {
-    previewCells: bezierPreview,
-    isDrawing: bezierDrawing
+    previewCells: bezierPreview
   } = useBezierStore();
   const { canvasBackgroundColor, width, height } = useCanvasStore();
   const { theme } = useTheme();
@@ -857,7 +856,6 @@ export const CanvasOverlay: React.FC = () => {
     boxPreview,
     boxDrawnCells,
     boxRectanglePreview,
-    bezierDrawing,
     bezierPreview,
     hoverPreview,
     hoveredCell,

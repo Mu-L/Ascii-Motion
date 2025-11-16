@@ -53,7 +53,7 @@ export const useHoverPreview = () => {
           if (firstKey) brushCellsCache.current.delete(firstKey);
         }
         
-        const cells = calculateBrushCells(x, y, size, shape as any, aspectRatio);
+        const cells = calculateBrushCells(x, y, size, shape as 'square' | 'circle', aspectRatio);
         brushCellsCache.current.set(cacheKey, cells);
       }
       

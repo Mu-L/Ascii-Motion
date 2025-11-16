@@ -337,7 +337,7 @@ export function generateBezierPreview(
       }
       break;
 
-    case 'autofill':
+    case 'autofill': {
       const paletteIdToUse = autofillPaletteId || 'block';
       previewCells = fillAutofill(
         anchorPoints,
@@ -353,6 +353,7 @@ export function generateBezierPreview(
         selectedBgColor
       );
       break;
+    }
 
     default:
       console.warn(`[bezierFill] Unknown fill mode: ${fillMode}`);
