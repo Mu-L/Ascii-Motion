@@ -905,8 +905,8 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       
       set({ anchorPoints: newPoints });
       
-      // Update drag start for next frame
-      set({ dragStartMousePos: { ...gridPos } });
+      // Don't update dragStartMousePos for shape dragging - we use dragStartShapePos instead
+      // Updating it would cause the delta to reset to 0 on the next frame
     }
   },
   

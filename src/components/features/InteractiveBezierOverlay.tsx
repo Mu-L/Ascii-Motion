@@ -57,6 +57,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     clearSelection,
     startDragPoint,
     startDragHandle,
+    startDragShape,
     updateDrag,
     endDrag,
     insertPointOnSegment,
@@ -366,15 +367,42 @@ export const InteractiveBezierOverlay: React.FC = () => {
         }
       }
 
-      // Test if inside shape (for dragging entire shape)
-      if (isClosed && anchorPoints.length > 0) {
-        // TODO: Implement proper point-in-polygon test
-        // For now, return null to prevent shape dragging
-      }
-
+      // No hit on points or handles - allow shape/path dragging
       return null;
     },
-    [anchorPoints, isClosed, gridToPixel, effectiveCellWidth, effectiveCellHeight]
+    [anchorPoints, gridToPixel, effectiveCellWidth, effectiveCellHeight]
+  );
+
+  /**
+   * Test if point is inside the closed shape using ray casting algorithm
+   */
+  const hitTestShapeInterior = useCallback(
+    (mouseX: number, mouseY: number): boolean => {
+      if (!isClosed || anchorPoints.length < 3) return false;
+
+      // Simple point-in-polygon test using ray casting
+      // Cast a ray from the point to the right and count intersections
+      let inside = false;
+      
+      for (let i = 0; i < anchorPoints.length; i++) {
+        const p0 = anchorPoints[i];
+        const p1 = anchorPoints[(i + 1) % anchorPoints.length];
+        
+        const p0Pixel = gridToPixel(p0.position.x, p0.position.y);
+        const p1Pixel = gridToPixel(p1.position.x, p1.position.y);
+        
+        // Check if the ray crosses this edge
+        if ((p0Pixel.y > mouseY) !== (p1Pixel.y > mouseY)) {
+          const intersectX = (p1Pixel.x - p0Pixel.x) * (mouseY - p0Pixel.y) / (p1Pixel.y - p0Pixel.y) + p0Pixel.x;
+          if (mouseX < intersectX) {
+            inside = !inside;
+          }
+        }
+      }
+      
+      return inside;
+    },
+    [anchorPoints, isClosed, gridToPixel]
   );
 
   /**
@@ -589,7 +617,31 @@ export const InteractiveBezierOverlay: React.FC = () => {
         return;
       }
 
-      // No hit on point/handle - check if Cmd+click on path to insert point
+      // Check if clicking on path or inside shape to drag entire shape (do this BEFORE adding new points)
+      if (anchorPoints.length >= 2) {
+        // For closed shapes, check if clicking inside the filled area
+        if (isClosed && !isDrawing) {
+          const insideShape = hitTestShapeInterior(mouseX, mouseY);
+          if (insideShape) {
+            const gridPos = pixelToGrid(mouseX, mouseY);
+            startDragShape(gridPos);
+            return;
+          }
+        }
+        
+        // For both open and closed shapes (including during drawing), check if clicking on the path line
+        // But NOT if holding Cmd/Ctrl (that's for inserting points)
+        if (!(e.metaKey || e.ctrlKey)) {
+          const pathHit = hitTestPath(mouseX, mouseY);
+          if (pathHit) {
+            const gridPos = pixelToGrid(mouseX, mouseY);
+            startDragShape(gridPos);
+            return;
+          }
+        }
+      }
+
+      // No hit on point/handle/path - check if Cmd+click on path to insert point
       if ((e.metaKey || e.ctrlKey) && anchorPoints.length >= 2) {
         const pathHit = hitTestPath(mouseX, mouseY);
         if (pathHit) {
@@ -625,6 +677,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     [
       hitTest,
       hitTestPath,
+      hitTestShapeInterior,
       isDrawing,
       isClosed,
       anchorPoints,
@@ -637,6 +690,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
       clearSelection,
       startDragPoint,
       startDragHandle,
+      startDragShape,
       insertPointOnSegment,
       removePoint,
     ]
