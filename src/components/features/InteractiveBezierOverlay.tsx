@@ -173,8 +173,8 @@ export const InteractiveBezierOverlay: React.FC = () => {
       return;
     }
 
-    setPlacingPointId(null);
-    setPlacementStartPos(null);
+    // Only clear these states when truly idle
+    // Don't clear placingPointId/placementStartPos here since they're for the NEXT point
     setAltClickPointId(null);
     setAltClickStartPos(null);
     setCmdKeyPressed(false);
@@ -699,21 +699,13 @@ export const InteractiveBezierOverlay: React.FC = () => {
       if (isDrawing || anchorPoints.length === 0) {
         const gridPos = pixelToGrid(mouseX, mouseY);
         const withHandles = false; // Will be determined by drag behavior
-        addAnchorPoint(gridPos.x, gridPos.y, withHandles);
+        
+        // addAnchorPoint now returns the ID of the newly created point
+        const newPointId = addAnchorPoint(gridPos.x, gridPos.y, withHandles);
         
         // Track that we just placed a point - if mouse moves we'll add handles
-        // The ID will be the ID of the point we just added (it's the last one)
-        // We need to get the actual ID from the store after it's been added
-        // For now, set a flag and we'll check on mouse move
         setPlacementStartPos(gridPos);
-        
-        // Use setTimeout to get the ID after React has updated
-        setTimeout(() => {
-          const points = useBezierStore.getState().anchorPoints;
-          if (points.length > 0) {
-            setPlacingPointId(points[points.length - 1].id);
-          }
-        }, 0);
+        setPlacingPointId(newPointId);
       } else if (isClosed) {
         // Click outside closed shape - commit it
         handleCommit();

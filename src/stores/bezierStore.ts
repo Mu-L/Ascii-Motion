@@ -135,7 +135,7 @@ interface BezierStore {
    * @param y - Grid Y coordinate
    * @param withHandles - Whether to create this point with handles
    */
-  addAnchorPoint: (x: number, y: number, withHandles: boolean) => void;
+  addAnchorPoint: (x: number, y: number, withHandles: boolean) => string;
   
   /**
    * Update the outgoing handle of the most recently added anchor point
@@ -410,6 +410,9 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       anchorPoints: [...state.anchorPoints, newPoint],
       isDrawing: true,
     }));
+    
+    // Return the ID of the newly created point
+    return newPoint.id;
   },
   
   updateLastAnchorHandles: (handleOut: { x: number; y: number }) => {
