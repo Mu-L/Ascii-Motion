@@ -1,12 +1,51 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.37";
-export const BUILD_DATE = "2025-11-14T04:47:05.288Z";
-export const BUILD_HASH = "5b12d20";
+export const VERSION = "0.2.38";
+export const BUILD_DATE = "2025-11-17T05:47:47.784Z";
+export const BUILD_HASH = "fa3a6bd";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.38",
+    "date": "2025-11-17T05:47:47.784Z",
+    "commits": [
+      "Added the bezier tool v1",
+      "Update flags",
+      "Merge pull request #40 from CameronFoxly/bezier-tool",
+      "Updated menus",
+      "updated fonts and UI overlay buttons",
+      "Added more to autofills",
+      "FIxed first point issue with a hacky workaround that remounts component between shapes",
+      "Added bezier actions to history",
+      "updated block character map",
+      "Perfermance cleanup, reduce re-renders on hoverstate",
+      "Fixed icons",
+      "Line width hotkeys fixed up",
+      "Line width added",
+      "cleaned up bezier handles",
+      "Remapped smart ansi character choices",
+      "Fixed up auto fill blocks",
+      "Apply on tool change",
+      "Added color palette to bezier tool",
+      "Click outside to commit",
+      "Added click to drag whole shape function",
+      "UI style refining",
+      "Added escape and enter behavior to line mode",
+      "Lint error clean up",
+      "Update bezier docs",
+      "Fixed shape repeat issue.",
+      "Persist settings between sessions.",
+      "Added status bar messages to bezier tool",
+      "Fine tune bezier handles",
+      "Added ascii preview in phase 4",
+      "Phase 3 polish of bezier overlay",
+      "Phase 2 and 3 first draft",
+      "Phase 1 of adding bezier tool",
+      "Add comprehensive bezier shape tool implementation plan with multiple autofill palettes"
+    ]
+  },
   {
     "version": "0.2.37",
     "date": "2025-11-14T04:47:05.288Z",

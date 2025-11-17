@@ -389,22 +389,21 @@ export function GradientPanel() {
                       </Tooltip>
                     )}
                     
-                    {/* Value Input */}
-                    <div className="w-24">
-                      <Input
-                        value={stop.value}
-                        onChange={(e) => handleStopValueChange(propertyKey, index, e.target.value)}
-                        className={cn(
-                          "h-7 text-xs text-center font-mono",
-                          propertyKey !== 'character' && 'uppercase'
-                        )}
-                        placeholder={propertyKey === 'character' ? 'A' : '#FFF'}
-                        inputMode={propertyKey === 'character' ? 'text' : 'text'}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                      />
-                    </div>
+                    {/* Value Input - Only for color properties */}
+                    {propertyKey !== 'character' && (
+                      <div className="w-20">
+                        <Input
+                          value={stop.value}
+                          onChange={(e) => handleStopValueChange(propertyKey, index, e.target.value)}
+                          className="h-7 text-xs text-center font-mono uppercase px-1"
+                          placeholder="#FFF"
+                          inputMode="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                        />
+                      </div>
+                    )}
                     
                     {/* Remove Button */}
                     <Button
