@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { useToolStore } from '../../stores/toolStore';
 import { useGradientStore } from '../../stores/gradientStore';
 import { useAsciiBoxStore } from '../../stores/asciiBoxStore';
+import { useBezierStore } from '../../stores/bezierStore';
 import { useCanvasContext } from '../../contexts/CanvasContext';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCanvasState } from '../../hooks/useCanvasState';
 import { InteractiveGradientOverlay } from './InteractiveGradientOverlay';
+import { InteractiveBezierOverlay } from './InteractiveBezierOverlay';
 
 type GradientPropertyKey = 'character' | 'textColor' | 'backgroundColor';
 
@@ -35,6 +37,10 @@ export const CanvasOverlay: React.FC = () => {
     drawnCells: boxDrawnCells,
     rectanglePreview: boxRectanglePreview
   } = useAsciiBoxStore();
+  const {
+    previewCells: bezierPreview,
+    remountKey: bezierRemountKey,
+  } = useBezierStore();
   const { canvasBackgroundColor, width, height } = useCanvasStore();
   const { theme } = useTheme();
 
@@ -607,7 +613,7 @@ export const CanvasOverlay: React.FC = () => {
             ctx.fillStyle = cell.color || '#000000';
             // Use the same font as the main canvas for 1:1 preview
             const scaledFontSize = fontMetrics.fontSize * zoom;
-            ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+            ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(
@@ -654,7 +660,7 @@ export const CanvasOverlay: React.FC = () => {
           if (cell.char && cell.char !== ' ') {
             ctx.fillStyle = cell.color || '#000000';
             const scaledFontSize = fontMetrics.fontSize * zoom;
-            ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+            ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(
@@ -692,7 +698,41 @@ export const CanvasOverlay: React.FC = () => {
         if (cell.char && cell.char !== ' ') {
           ctx.fillStyle = cell.color || '#ffffff';
           const scaledFontSize = fontMetrics.fontSize * zoom;
-          ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+          ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            cell.char, 
+            pixelX + effectiveCellWidth / 2, 
+            pixelY + effectiveCellHeight / 2
+          );
+        }
+      });
+      
+      ctx.globalAlpha = 1.0;
+    }
+    
+    // Draw Bezier preview overlay (shows filled ASCII in real-time as shape is edited)
+    // Show preview whenever there are preview cells, regardless of drawing state
+    if (bezierPreview && bezierPreview.size > 0) {
+      ctx.globalAlpha = 0.85; // Slightly transparent to distinguish from committed content
+      
+      bezierPreview.forEach((cell, key) => {
+        const [x, y] = key.split(',').map(Number);
+        const pixelX = x * effectiveCellWidth + panOffset.x;
+        const pixelY = y * effectiveCellHeight + panOffset.y;
+
+        // Draw cell background
+        if (cell.bgColor && cell.bgColor !== 'transparent') {
+          ctx.fillStyle = cell.bgColor;
+          ctx.fillRect(pixelX, pixelY, effectiveCellWidth, effectiveCellHeight);
+        }
+
+        // Draw character
+        if (cell.char && cell.char !== ' ') {
+          ctx.fillStyle = cell.color || '#000000';
+          const scaledFontSize = fontMetrics.fontSize * zoom;
+          ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
@@ -817,6 +857,7 @@ export const CanvasOverlay: React.FC = () => {
     boxPreview,
     boxDrawnCells,
     boxRectanglePreview,
+    bezierPreview,
     hoverPreview,
     hoveredCell,
     canvasBackgroundColor,
@@ -861,6 +902,7 @@ export const CanvasOverlay: React.FC = () => {
         }}
       />
       <InteractiveGradientOverlay />
+      <InteractiveBezierOverlay key={bezierRemountKey} />
     </>
   );
 };

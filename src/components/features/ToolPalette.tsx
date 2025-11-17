@@ -1,6 +1,8 @@
 import React from 'react';
 import { useToolStore } from '../../stores/toolStore';
 import { useGradientStore } from '../../stores/gradientStore';
+import { useBezierStore } from '../../stores/bezierStore';
+import { useAnimationStore } from '../../stores/animationStore';
 import { useCanvasContext } from '../../contexts/CanvasContext';
 import { useFlipUtilities } from '../../hooks/useFlipUtilities';
 import { Button } from '@/components/ui/button';
@@ -11,8 +13,11 @@ import { CollapsibleHeader } from '../common/CollapsibleHeader';
 import { PanelSeparator } from '../common/PanelSeparator';
 import { GradientIcon } from '../icons';
 import { BrushControls } from './BrushControls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AUTOFILL_PALETTES } from '../../constants/bezierAutofill';
+import type { BezierCloseShapeHistoryAction } from '../../types';
 import { 
-  PenTool, 
+  PenTool,
   Eraser, 
   PaintBucket, 
   Pipette, 
@@ -27,9 +32,11 @@ import {
   MoveVertical,
   TypeOutline,
   Grid2x2,
+  Brush,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import type { Tool } from '../../types';
 import { getToolTooltipText } from '../../constants/hotkeys';
 
@@ -59,7 +66,8 @@ const DashedRectangleIcon: React.FC<{ className?: string }> = ({ className }) =>
 
 // Organized tools by category
 const DRAWING_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; description: string }> = [
-  { id: 'pencil', name: 'Pencil', icon: <PenTool className="w-3 h-3" />, description: 'Draw characters' },
+  { id: 'pencil', name: 'Brush', icon: <Brush className="w-3 h-3" />, description: 'Draw characters' },
+  { id: 'beziershape', name: 'Bezier Pen Tool', icon: <PenTool className="w-3 h-3" />, description: 'Draw bezier vector shapes' },
   { id: 'eraser', name: 'Eraser', icon: <Eraser className="w-3 h-3" />, description: 'Remove characters' },
   { id: 'paintbucket', name: 'Fill', icon: <PaintBucket className="w-3 h-3" />, description: 'Fill connected areas' },
   { id: 'gradientfill', name: 'Gradient', icon: <GradientIcon className="w-3 h-3" />, description: 'Apply gradient fills' },
@@ -83,8 +91,10 @@ const UTILITY_TOOLS: Array<{ id: Tool; name: string; icon: React.ReactNode; desc
 ];
 
 export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
-  const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor } = useToolStore();
+  const { activeTool, setActiveTool, rectangleFilled, setRectangleFilled, paintBucketContiguous, setPaintBucketContiguous, magicWandContiguous, setMagicWandContiguous, toolAffectsChar, toolAffectsColor, toolAffectsBgColor, eyedropperPicksChar, eyedropperPicksColor, eyedropperPicksBgColor, setToolAffectsChar, setToolAffectsColor, setToolAffectsBgColor, setEyedropperPicksChar, setEyedropperPicksColor, setEyedropperPicksBgColor, fillMatchChar, fillMatchColor, fillMatchBgColor, setFillMatchChar, setFillMatchColor, setFillMatchBgColor, magicMatchChar, magicMatchColor, magicMatchBgColor, setMagicMatchChar, setMagicMatchColor, setMagicMatchBgColor, pushToHistory } = useToolStore();
   const { contiguous, matchChar, matchColor, matchBgColor, setContiguous, setMatchCriteria } = useGradientStore();
+  const { fillMode, autofillPaletteId, setFillMode, setAutofillPaletteId, fillColorMode, setFillColorMode, strokeWidth, strokeTaperStart, strokeTaperEnd, setStrokeWidth, setStrokeTaperStart, setStrokeTaperEnd, isClosed, toggleClosedShape } = useBezierStore();
+  const { currentFrameIndex } = useAnimationStore();
   const { altKeyDown, ctrlKeyDown } = useCanvasContext();
   const { flipHorizontal, flipVertical } = useFlipUtilities();
   const [showOptions, setShowOptions] = React.useState(true);
@@ -101,7 +111,7 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
   }
 
   // Tools that actually have configurable options. (Removed 'eraser' and 'text' per layout bug fix.)
-  const hasOptions = ['rectangle', 'ellipse', 'paintbucket', 'gradientfill', 'magicwand', 'pencil', 'eraser', 'eyedropper'].includes(effectiveTool);
+  const hasOptions = ['rectangle', 'ellipse', 'paintbucket', 'gradientfill', 'magicwand', 'pencil', 'eraser', 'eyedropper', 'beziershape'].includes(effectiveTool);
 
   // Get the current tool's icon
   const getCurrentToolIcon = () => {
@@ -125,6 +135,25 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
     setActiveTool(tool.id);
   };
 
+  // Handle close shape toggle with history tracking
+  const handleCloseShapeToggle = (checked: boolean) => {
+    const wasClosed = isClosed;
+    toggleClosedShape();
+    
+    // Push history for closing/opening shape
+    const closeAction: BezierCloseShapeHistoryAction = {
+      type: 'bezier_close_shape',
+      timestamp: Date.now(),
+      description: checked ? 'Close bezier shape' : 'Open bezier shape',
+      data: {
+        wasClosed,
+        nowClosed: checked,
+        frameIndex: currentFrameIndex,
+      },
+    };
+    pushToHistory(closeAction);
+  };
+
   const ToolButton: React.FC<{ tool: { id: Tool; name: string; icon: React.ReactNode; description: string } }> = ({ tool }) => {
     // Tools use default tabIndex (0) to come after header and frames but in natural DOM order
     const tabIndex = 0;
@@ -145,7 +174,7 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">
-          <p className="text-xs">{getToolTooltipText(tool.id, tool.description)}</p>
+          <p className="text-xs">{getToolTooltipText(tool.id, tool.name)}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -379,6 +408,194 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                           </TooltipContent>
                         </Tooltip>
                       </div>
+                    </div>
+                  )}
+                  
+                  {/* Bezier Shape Tool Options */}
+                  {effectiveTool === 'beziershape' && (
+                    <div className="space-y-3">
+                      {/* Character Mode Selector */}
+                      <div className="space-y-2">
+                        <Label htmlFor="fill-mode" className="text-xs text-muted-foreground">
+                          Character Mode:
+                        </Label>
+                        <Select value={fillMode} onValueChange={(value) => setFillMode(value as 'constant' | 'palette' | 'autofill')}>
+                          <SelectTrigger id="fill-mode" className="w-full h-8 text-xs [&>span]:text-left">
+                            <SelectValue placeholder="Select character mode...">
+                              {fillMode === 'constant' && 'Selection'}
+                              {fillMode === 'palette' && 'Palette'}
+                              {fillMode === 'autofill' && 'Autofill'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent align="start">
+                            <SelectItem value="constant" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Selection</span>
+                                <span className="text-muted-foreground text-[10px]">Fill with current selected color</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="palette" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Palette</span>
+                                <span className="text-muted-foreground text-[10px]">Map current character palette to shape</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="autofill" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Autofill</span>
+                                <span className="text-muted-foreground text-[10px]">Smart character selection from preset</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Autofill Palette Selector - Only shown when autofill mode is active */}
+                      {fillMode === 'autofill' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="autofill-palette" className="text-xs text-muted-foreground">
+                            Autofill Palette:
+                          </Label>
+                          <Select value={autofillPaletteId} onValueChange={setAutofillPaletteId}>
+                            <SelectTrigger id="autofill-palette" className="w-full h-8 text-xs [&>span]:text-left">
+                              <SelectValue>
+                                {AUTOFILL_PALETTES.find(p => p.id === autofillPaletteId)?.name || 'Select palette...'}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                              {AUTOFILL_PALETTES.map((palette) => (
+                                <SelectItem key={palette.id} value={palette.id} className="text-xs">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{palette.name}</span>
+                                    <span className="text-muted-foreground text-[10px]">{palette.description}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Color Mode Selector */}
+                      <div className="space-y-2">
+                        <Label htmlFor="fill-color-mode" className="text-xs text-muted-foreground">
+                          Color Mode:
+                        </Label>
+                        <Select value={fillColorMode} onValueChange={(value) => setFillColorMode(value as 'current' | 'palette')}>
+                          <SelectTrigger id="fill-color-mode" className="w-full h-8 text-xs [&>span]:text-left">
+                            <SelectValue placeholder="Select color mode...">
+                              {fillColorMode === 'current' && 'Current Color'}
+                              {fillColorMode === 'palette' && 'Palette'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent align="start">
+                            <SelectItem value="current" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Current Color</span>
+                                <span className="text-muted-foreground text-[10px]">Applies the current color to all cells</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="palette" className="text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">Palette</span>
+                                <span className="text-muted-foreground text-[10px]">Maps palette colors by overlap amount</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Close Shape Toggle */}
+                      <div className="space-y-2 pt-2 border-t border-border/50">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="close-shape" className="text-xs text-muted-foreground">
+                            Close Shape:
+                          </Label>
+                          <Switch
+                            id="close-shape"
+                            checked={isClosed}
+                            onCheckedChange={handleCloseShapeToggle}
+                            tabIndex={-1}
+                            onKeyDown={(e) => {
+                              // Prevent all keyboard events on this switch
+                              // (Enter should commit the bezier shape, not toggle this)
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {isClosed ? 'Shape is closed' : 'Shape is open'}
+                        </p>
+                      </div>
+                      
+                      {/* Stroke Controls - Only shown for open paths */}
+                      {!isClosed && (
+                        <>
+                          {/* Stroke Width Slider */}
+                          <div className="space-y-2 pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-width" className="text-xs text-muted-foreground">
+                                Stroke Width:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {strokeWidth.toFixed(1)}
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-width"
+                              min={0.1}
+                              max={10}
+                              step={0.1}
+                              value={strokeWidth}
+                              onValueChange={setStrokeWidth}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          {/* Taper Start Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-taper-start" className="text-xs text-muted-foreground">
+                                Taper Start:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {(strokeTaperStart * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-taper-start"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={strokeTaperStart}
+                              onValueChange={setStrokeTaperStart}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          {/* Taper End Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stroke-taper-end" className="text-xs text-muted-foreground">
+                                Taper End:
+                              </Label>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {(strokeTaperEnd * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="stroke-taper-end"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={strokeTaperEnd}
+                              onValueChange={setStrokeTaperEnd}
+                              className="w-full"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   

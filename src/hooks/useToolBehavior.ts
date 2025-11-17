@@ -84,7 +84,7 @@ export const useToolBehavior = () => {
       case 'magicwand':
         return 'cursor-magicwand'; // Custom magic wand cursor
       case 'pencil':
-        return 'cursor-pen'; // Custom pen cursor
+        return 'cursor-brush'; // Custom brush cursor with hotspot at bottom-left
       case 'eraser':
         return 'cursor-eraser'; // Custom eraser cursor
       case 'paintbucket':
@@ -93,6 +93,8 @@ export const useToolBehavior = () => {
         return 'cursor-crosshair';
       case 'ellipse':
         return 'cursor-crosshair';
+      case 'beziershape':
+        return 'cursor-bezier'; // Custom bezier pen cursor (will be overridden in InteractiveBezierOverlay for +/- modifiers)
       case 'eyedropper':
         return 'cursor-eyedropper'; // Custom eyedropper icon cursor
       case 'text':
@@ -126,6 +128,8 @@ export const useToolBehavior = () => {
         return 'Rectangle';
       case 'ellipse':
         return 'Ellipse';
+      case 'beziershape':
+        return 'Bezier Pen Tool';
       case 'eyedropper':
         return 'Eyedropper';
       case 'text':
@@ -143,12 +147,12 @@ export const useToolBehavior = () => {
 
   // Check if tool requires continuous interaction (click and drag)
   const isInteractiveTool = useCallback((tool: Tool) => {
-    return ['select', 'lasso', 'magicwand', 'rectangle', 'ellipse', 'text', 'asciitype'].includes(tool);
+    return ['select', 'lasso', 'magicwand', 'rectangle', 'ellipse', 'beziershape', 'text', 'asciitype'].includes(tool);
   }, []);
 
   // Check if tool is a drawing tool (modifies canvas on click)
   const isDrawingTool = useCallback((tool: Tool) => {
-    return ['pencil', 'eraser', 'paintbucket', 'rectangle', 'ellipse', 'text', 'asciitype'].includes(tool);
+    return ['pencil', 'eraser', 'paintbucket', 'rectangle', 'ellipse', 'beziershape', 'text', 'asciitype'].includes(tool);
   }, []);
 
   return {

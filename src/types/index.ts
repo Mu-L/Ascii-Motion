@@ -70,6 +70,7 @@ export type Tool =
   | 'asciitype'
   | 'asciibox'
   | 'brush'
+  | 'beziershape'
   | 'gradientfill'
   | 'fliphorizontal'
   | 'flipvertical';
@@ -262,7 +263,14 @@ export type HistoryActionType =
   | 'apply_time_effect'     // Apply time-based effect (wave warp, wiggle)
   | 'set_frame_durations'   // Bulk set frame durations
   | 'import_media'          // Import image/video to canvas
-  | 'apply_generator';      // Apply procedural generator to timeline
+  | 'apply_generator'       // Apply procedural generator to timeline
+  | 'bezier_add_point'      // Add anchor point to bezier shape
+  | 'bezier_move_point'     // Move anchor point(s)
+  | 'bezier_adjust_handle'  // Adjust bezier handle
+  | 'bezier_toggle_handles' // Toggle handles on/off for a point
+  | 'bezier_delete_point'   // Delete anchor point
+  | 'bezier_close_shape'    // Close the bezier shape
+  | 'bezier_commit';        // Commit bezier shape to canvas
 
 export interface HistoryAction {
   type: HistoryActionType;
@@ -472,6 +480,99 @@ export interface ApplyGeneratorHistoryAction extends HistoryAction {
   };
 }
 
+// Bezier Shape Tool History Actions
+export interface BezierAddPointHistoryAction extends HistoryAction {
+  type: 'bezier_add_point';
+  data: {
+    pointId: string;
+    position: { x: number; y: number };
+    withHandles: boolean;
+    frameIndex: number;
+  };
+}
+
+export interface BezierMovePointHistoryAction extends HistoryAction {
+  type: 'bezier_move_point';
+  data: {
+    pointIds: string[]; // Support multi-select
+    previousPositions: Array<{ pointId: string; position: { x: number; y: number } }>;
+    newPositions: Array<{ pointId: string; position: { x: number; y: number } }>;
+    frameIndex: number;
+  };
+}
+
+export interface BezierAdjustHandleHistoryAction extends HistoryAction {
+  type: 'bezier_adjust_handle';
+  data: {
+    pointId: string;
+    handleType: 'in' | 'out';
+    previousHandle: { x: number; y: number };
+    newHandle: { x: number; y: number };
+    // Store opposite handle state in case symmetry was broken
+    previousOppositeHandle: { x: number; y: number } | null;
+    newOppositeHandle: { x: number; y: number } | null;
+    previousSymmetric: boolean;
+    newSymmetric: boolean;
+    frameIndex: number;
+  };
+}
+
+export interface BezierToggleHandlesHistoryAction extends HistoryAction {
+  type: 'bezier_toggle_handles';
+  data: {
+    pointId: string;
+    previousHasHandles: boolean;
+    newHasHandles: boolean;
+    previousHandleIn: { x: number; y: number } | null;
+    previousHandleOut: { x: number; y: number } | null;
+    newHandleIn: { x: number; y: number } | null;
+    newHandleOut: { x: number; y: number } | null;
+    frameIndex: number;
+  };
+}
+
+export interface BezierDeletePointHistoryAction extends HistoryAction {
+  type: 'bezier_delete_point';
+  data: {
+    pointIndex: number; // Where the point was in the array
+    point: import('../stores/bezierStore').BezierAnchorPoint;
+    frameIndex: number;
+  };
+}
+
+export interface BezierCloseShapeHistoryAction extends HistoryAction {
+  type: 'bezier_close_shape';
+  data: {
+    wasClosed: boolean;
+    nowClosed: boolean;
+    frameIndex: number;
+  };
+}
+
+export interface BezierCommitHistoryAction extends HistoryAction {
+  type: 'bezier_commit';
+  data: {
+    // Full bezier state snapshot to restore on undo
+    bezierState: {
+      anchorPoints: Array<import('../stores/bezierStore').BezierAnchorPoint>;
+      isClosed: boolean;
+      fillMode: 'constant' | 'palette' | 'autofill';
+      autofillPaletteId: string;
+      fillColorMode: 'current' | 'palette';
+      strokeWidth: number;
+      strokeTaperStart: number;
+      strokeTaperEnd: number;
+      selectedChar: string;
+      selectedColor: string;
+      selectedBgColor: string;
+    };
+    // Canvas state before/after for canvas undo
+    previousCanvasData: Map<string, Cell>;
+    newCanvasData: Map<string, Cell>;
+    frameIndex: number;
+  };
+}
+
 export type AnyHistoryAction = 
   | CanvasHistoryAction
   | CanvasResizeHistoryAction
@@ -490,4 +591,12 @@ export type AnyHistoryAction =
   | ApplyTimeEffectHistoryAction
   | SetFrameDurationsHistoryAction
   | ImportMediaHistoryAction
-  | ApplyGeneratorHistoryAction;
+  | ApplyGeneratorHistoryAction
+  | BezierAddPointHistoryAction
+  | BezierMovePointHistoryAction
+  | BezierAdjustHandleHistoryAction
+  | BezierToggleHandlesHistoryAction
+  | BezierDeletePointHistoryAction
+  | BezierCloseShapeHistoryAction
+  | BezierCommitHistoryAction;
+
