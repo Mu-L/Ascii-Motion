@@ -36,8 +36,19 @@ export const useHoverPreview = () => {
   
   const activeBrush = effectiveTool === 'eraser' ? brushSettings.eraser : brushSettings.pencil;
   
-  // Use RAF to throttle updates
+  // Use refs to avoid effect re-runs on every hover cell change
   const rafIdRef = useRef<number | null>(null);
+  const isScheduledRef = useRef(false);
+  const hoveredCellRef = useRef(hoveredCell);
+  const effectiveToolRef = useRef(effectiveTool);
+  const activeBrushRef = useRef(activeBrush);
+  const isDrawingRef = useRef(isDrawing);
+  
+  // Keep refs in sync
+  hoveredCellRef.current = hoveredCell;
+  effectiveToolRef.current = effectiveTool;
+  activeBrushRef.current = activeBrush;
+  isDrawingRef.current = isDrawing;
   
   // Memoize brush pattern calculation - only recalculate when brush settings change
   const brushCellsCache = useRef<Map<string, { x: number; y: number }[]>>(new Map());
@@ -61,71 +72,79 @@ export const useHoverPreview = () => {
     };
   }, []);
   
-  useEffect(() => {
-    // Cancel any pending RAF
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-    
-    // Throttle updates using RAF
-    rafIdRef.current = requestAnimationFrame(() => {
-      // Don't show preview while actively drawing (except for eraser - show dimmed version)
-      if (isDrawing && effectiveTool !== 'eraser') {
-        setHoverPreview({ active: false, mode: 'none', cells: [] });
+  // Stable update function that doesn't cause effect re-runs
+  const scheduleUpdate = useMemo(() => {
+    return () => {
+      // Only schedule one RAF at a time
+      if (isScheduledRef.current) {
         return;
       }
       
-      // Clear preview when mouse leaves canvas
-      if (!hoveredCell) {
-        setHoverPreview({ active: false, mode: 'none', cells: [] });
-        return;
-      }
+      isScheduledRef.current = true;
       
-      // Calculate preview based on active tool
-      switch (effectiveTool) {
-        case 'pencil':
-        case 'eraser': {
-          // Use cached brush pattern calculation
-          const brushCells = getBrushCells(
-            hoveredCell.x,
-            hoveredCell.y,
-            activeBrush.size,
-            activeBrush.shape,
-            fontMetrics.aspectRatio
-          );
-          
-          // For eraser, use 'eraser-brush-active' mode when actively drawing to show dimmed preview
-          const mode = effectiveTool === 'eraser' 
-            ? (isDrawing ? 'eraser-brush-active' : 'eraser-brush')
-            : 'brush';
-          
-          setHoverPreview({
-            active: true,
-            mode,
-            cells: brushCells
-          });
-          break;
+      rafIdRef.current = requestAnimationFrame(() => {
+        isScheduledRef.current = false;
+        
+        const currentHoveredCell = hoveredCellRef.current;
+        const currentEffectiveTool = effectiveToolRef.current;
+        const currentActiveBrush = activeBrushRef.current;
+        const currentIsDrawing = isDrawingRef.current;
+        
+        // Don't show preview while actively drawing (except for eraser)
+        if (currentIsDrawing && currentEffectiveTool !== 'eraser') {
+          setHoverPreview({ active: false, mode: 'none', cells: [] });
+          return;
         }
         
-        default:
-          // No hover preview for other tools (selection, eyedropper, etc.)
+        // Clear preview when mouse leaves canvas
+        if (!currentHoveredCell) {
           setHoverPreview({ active: false, mode: 'none', cells: [] });
-      }
-    });
-    
+          return;
+        }
+        
+        // Calculate preview based on active tool
+        switch (currentEffectiveTool) {
+          case 'pencil':
+          case 'eraser': {
+            const brushCells = getBrushCells(
+              currentHoveredCell.x,
+              currentHoveredCell.y,
+              currentActiveBrush.size,
+              currentActiveBrush.shape,
+              fontMetrics.aspectRatio
+            );
+            
+            const mode = currentEffectiveTool === 'eraser' 
+              ? (currentIsDrawing ? 'eraser-brush-active' : 'eraser-brush')
+              : 'brush';
+            
+            setHoverPreview({
+              active: true,
+              mode,
+              cells: brushCells
+            });
+            break;
+          }
+          
+          default:
+            setHoverPreview({ active: false, mode: 'none', cells: [] });
+        }
+      });
+    };
+  }, [fontMetrics.aspectRatio, setHoverPreview, getBrushCells]);
+  
+  // Only run effect when hover cell actually changes
+  useEffect(() => {
+    scheduleUpdate();
+  }, [hoveredCell, scheduleUpdate]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
+        isScheduledRef.current = false;
       }
     };
-  }, [
-    hoveredCell, 
-    effectiveTool,
-    activeBrush.size,
-    activeBrush.shape,
-    fontMetrics.aspectRatio,
-    isDrawing,
-    setHoverPreview,
-    getBrushCells
-  ]);
+  }, []);
 };

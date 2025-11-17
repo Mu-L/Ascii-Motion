@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useCanvasContext, useCanvasDimensions } from '../contexts/CanvasContext';
 import { useToolStore } from '../stores/toolStore';
 import { useCanvasStore } from '../stores/canvasStore';
@@ -34,6 +34,9 @@ export const useCanvasMouseHandlers = (): MouseHandlers => {
   const { getGridCoordinates } = useCanvasDimensions();
   const { width, height, cells, setCanvasData } = useCanvasStore();
   const { moveState, commitMove, isPointInEffectiveSelection, selectionMode } = useCanvasState();
+  
+  // Throttle hover updates to reduce re-renders - only update if cell actually changed
+  const lastHoveredCellRef = useRef<{ x: number; y: number } | null>(null);
   
   // Import tool hooks
   const selectionHandlers = useCanvasSelection();
@@ -119,6 +122,7 @@ export const useCanvasMouseHandlers = (): MouseHandlers => {
   const handleMouseLeave = useCallback(() => {
     setIsDrawing(false);
     setMouseButtonDown(false);
+    lastHoveredCellRef.current = null; // Reset ref
     setHoveredCell(null); // Clear hover state when mouse leaves canvas
     
     // Reset pencil position to prevent unwanted connecting lines
@@ -316,9 +320,13 @@ export const useCanvasMouseHandlers = (): MouseHandlers => {
       return;
     }
 
-    // Update hovered cell for all tools
+    // Update hovered cell for all tools (only if cell actually changed to reduce re-renders)
     const { x, y } = getGridCoordinatesFromEvent(event);
-    setHoveredCell({ x, y });
+    const lastCell = lastHoveredCellRef.current;
+    if (!lastCell || lastCell.x !== x || lastCell.y !== y) {
+      lastHoveredCellRef.current = { x, y };
+      setHoveredCell({ x, y });
+    }
 
     // Handle paste mode interactions first
     if (pasteMode.isActive) {

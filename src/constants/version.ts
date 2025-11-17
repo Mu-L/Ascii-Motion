@@ -1,12 +1,31 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.38";
-export const BUILD_DATE = "2025-11-17T05:47:47.784Z";
-export const BUILD_HASH = "fa3a6bd";
+export const VERSION = "0.2.39";
+export const BUILD_DATE = "2025-11-17T19:54:03.378Z";
+export const BUILD_HASH = "690af82";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.39",
+    "date": "2025-11-17T19:54:03.378Z",
+    "commits": [
+      "Fixed up gradient UI a bit",
+      "Added crop functionality to selection tools",
+      "Add toast notification for minimum canvas size validation on crop",
+      "Merge pull request #41 from CameronFoxly/copilot/add-space-to-character-picker",
+      "Fix crop canvas bugs: clear selection, single undo step for all frames, simplified button UI",
+      "Fix Tooltip error by wrapping in TooltipProvider",
+      "Add comprehensive documentation for crop canvas to selection feature",
+      "Add tests for crop canvas to selection utility functions",
+      "Add custom character input field to character picker",
+      "Implement crop canvas to selection feature for all selection tools",
+      "Initial plan",
+      "Add space character to Basic Text tab in character picker",
+      "Initial plan"
+    ]
+  },
   {
     "version": "0.2.38",
     "date": "2025-11-17T05:47:47.784Z",

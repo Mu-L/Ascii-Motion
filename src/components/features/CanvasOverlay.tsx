@@ -37,10 +37,9 @@ export const CanvasOverlay: React.FC = () => {
     drawnCells: boxDrawnCells,
     rectanglePreview: boxRectanglePreview
   } = useAsciiBoxStore();
-  const {
-    previewCells: bezierPreview,
-    remountKey: bezierRemountKey,
-  } = useBezierStore();
+  // Only subscribe to bezier preview cells, not the entire store
+  const bezierPreview = useBezierStore((state) => state.previewCells);
+  const bezierRemountKey = useBezierStore((state) => state.remountKey);
   const { canvasBackgroundColor, width, height } = useCanvasStore();
   const { theme } = useTheme();
 
@@ -902,7 +901,7 @@ export const CanvasOverlay: React.FC = () => {
         }}
       />
       <InteractiveGradientOverlay />
-      <InteractiveBezierOverlay key={bezierRemountKey} />
+      {activeTool === 'beziershape' && <InteractiveBezierOverlay key={bezierRemountKey} />}
     </>
   );
 };

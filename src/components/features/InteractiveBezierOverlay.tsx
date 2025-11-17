@@ -43,7 +43,9 @@ export const InteractiveBezierOverlay: React.FC = () => {
     wasSymmetric?: boolean;
   }>({ type: null });
   
-  const { activeTool, pushToHistory } = useToolStore();
+  // Use specific selectors for non-bezier stores to avoid unnecessary re-renders
+  const activeTool = useToolStore((state) => state.activeTool);
+  const pushToHistory = useToolStore((state) => state.pushToHistory);
   const { cellWidth, cellHeight, zoom, panOffset } = useCanvasContext();
   
   // Track if we just placed a new point and should be creating handles on drag
@@ -61,6 +63,7 @@ export const InteractiveBezierOverlay: React.FC = () => {
     | null
   >(null);
   
+  // Bezier store - subscribe to all values since this is the primary bezier interaction component
   const {
     anchorPoints,
     isClosed,
@@ -96,11 +99,22 @@ export const InteractiveBezierOverlay: React.FC = () => {
     forceRemount,
   } = useBezierStore();
 
-  const { width, height, cells, setCanvasData } = useCanvasStore();
-  const { selectedChar, selectedColor, selectedBgColor } = useToolStore();
-  const { activePalette } = useCharacterPaletteStore();
-  const { currentFrameIndex } = useAnimationStore();
-  const { getActivePalette, activePaletteId, customPalettes } = usePaletteStore();
+  // Use specific selectors for other stores
+  const width = useCanvasStore((state) => state.width);
+  const height = useCanvasStore((state) => state.height);
+  const cells = useCanvasStore((state) => state.cells);
+  const setCanvasData = useCanvasStore((state) => state.setCanvasData);
+  
+  const selectedChar = useToolStore((state) => state.selectedChar);
+  const selectedColor = useToolStore((state) => state.selectedColor);
+  const selectedBgColor = useToolStore((state) => state.selectedBgColor);
+  
+  const activePalette = useCharacterPaletteStore((state) => state.activePalette);
+  const currentFrameIndex = useAnimationStore((state) => state.currentFrameIndex);
+  
+  const getActivePalette = usePaletteStore((state) => state.getActivePalette);
+  const activePaletteId = usePaletteStore((state) => state.activePaletteId);
+  const customPalettes = usePaletteStore((state) => state.customPalettes);
 
   const effectiveCellWidth = cellWidth * zoom;
   const effectiveCellHeight = cellHeight * zoom;

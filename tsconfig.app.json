@@ -31,5 +31,6 @@
       "@ascii-motion/premium": ["./packages/premium/src"]
     }
   },
-  "include": ["src", "packages/premium/src"]
+  "include": ["src", "packages/premium/src"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"]
 }

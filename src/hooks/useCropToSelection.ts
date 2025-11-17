@@ -11,7 +11,7 @@ import { cropCanvasToSelection, cropAllFramesToSelection } from '../utils/cropUt
  */
 export function useCropToSelection() {
   const { width: canvasWidth, height: canvasHeight, cells, setCanvasSize, setCanvasData } = useCanvasStore();
-  const { selection, lassoSelection, magicWandSelection, activeTool, pushCanvasResizeHistory, clearSelection, clearLassoSelection, clearMagicWandSelection } = useToolStore();
+  const { selection, lassoSelection, magicWandSelection, activeTool, clearSelection, clearLassoSelection, clearMagicWandSelection } = useToolStore();
   const { frames, currentFrameIndex, setFrameData } = useAnimationStore();
 
   /**
