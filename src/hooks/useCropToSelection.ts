@@ -4,6 +4,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useToolStore } from '../stores/toolStore';
 import { useAnimationStore } from '../stores/animationStore';
 import { cropCanvasToSelection, cropAllFramesToSelection } from '../utils/cropUtils';
+import type { CanvasResizeHistoryAction } from '../types';
 
 /**
  * Hook for cropping canvas to selection across all frames
@@ -90,7 +91,7 @@ export function useCropToSelection() {
 
     // Add to history - we'll use a custom approach to store all frames
     // We'll create a canvas_resize action but extend it with all frames data
-    const action = {
+    const action: CanvasResizeHistoryAction = {
       type: 'canvas_resize' as const,
       timestamp: Date.now(),
       description: `Crop canvas from ${previousWidth}×${previousHeight} to ${newWidth}×${newHeight}`,
@@ -109,7 +110,7 @@ export function useCropToSelection() {
     };
     
     // Push to history using the internal method
-    useToolStore.getState().pushToHistory(action as any);
+    useToolStore.getState().pushToHistory(action);
 
     // Clear the selection after crop
     if (activeTool === 'select') {

@@ -298,6 +298,10 @@ export interface CanvasResizeHistoryAction extends HistoryAction {
     newHeight: number;
     previousCanvasData: Map<string, Cell>;
     frameIndex: number;
+    // Optional crop operation data
+    allFramesPreviousData?: Map<string, Cell>[];
+    allFramesNewData?: Map<string, Cell>[];
+    isCropOperation?: boolean;
   };
 }
 

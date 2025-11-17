@@ -7898,8 +7898,8 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas (accounting for DPI scaling)
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     // Set up rendering context with proper font stack
     ctx.font = `${fontSize}px "SF Mono", Monaco, "Cascadia Code", Consolas, "Courier New", monospace`;
@@ -7924,7 +7924,7 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
       ctx.fillStyle = cell.color;
       ctx.fillText(cell.char, x, y);
     });
-  }, [cellWidth, cellHeight, fontSize]);
+  }, [cellWidth, cellHeight, fontSize, canvasWidth, canvasHeight]);
 
   const playAnimation = useCallback(() => {
     if (frames.length === 0) return;
@@ -7968,10 +7968,28 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
     onMouseEnter?.();
   }, [isPlaying, playAnimation, onMouseEnter]);
 
-  // Draw initial frame on mount
+  // Draw initial frame on mount and setup high-DPI canvas
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Setup high-DPI canvas for crisp rendering
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = canvasWidth * devicePixelRatio;
+    canvas.height = canvasHeight * devicePixelRatio;
+    
+    // Set CSS size to maintain visual dimensions
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
+    
+    // Scale context to account for device pixel ratio
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
     drawFrame(0);
-  }, [drawFrame]);
+  }, [drawFrame, canvasWidth, canvasHeight]);
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -7985,8 +8003,6 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
   return (
     <canvas
       ref={canvasRef}
-      width={canvasWidth}
-      height={canvasHeight}
       onMouseEnter={handleMouseEnter}
       onClick={onClick}
       aria-label="ASCII Motion logo"

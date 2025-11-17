@@ -14,7 +14,7 @@ import { useFlipUtilities } from './useFlipUtilities';
 import { useCropToSelection } from './useCropToSelection';
 import { useProjectFileActions } from './useProjectFileActions';
 import { ANSI_COLORS } from '../constants/colors';
-import type { AnyHistoryAction, CanvasHistoryAction, FrameId } from '../types';
+import type { AnyHistoryAction, CanvasHistoryAction, CanvasResizeHistoryAction, FrameId, Cell } from '../types';
 
 type CanvasStoreState = ReturnType<typeof useCanvasStore.getState>;
 type CanvasStoreForHistory = Pick<CanvasStoreState, 'setCanvasData'>;
@@ -58,7 +58,7 @@ const processHistoryAction = (
     }
     
     case 'canvas_resize': {
-      const resizeAction = action as any; // Using any to access extended properties
+      const resizeAction = action as CanvasResizeHistoryAction;
       const canvas = useCanvasStore.getState();
       
       // Check if this is a crop operation with all frames data
@@ -70,7 +70,7 @@ const processHistoryAction = (
         
         // If crop operation, restore all frames to cropped state
         if (isCropOperation && resizeAction.data.allFramesNewData) {
-          resizeAction.data.allFramesNewData.forEach((frameData: Map<string, any>, index: number) => {
+          resizeAction.data.allFramesNewData.forEach((frameData: Map<string, Cell>, index: number) => {
             animationStore.setFrameData(index, frameData);
           });
         }
@@ -86,7 +86,7 @@ const processHistoryAction = (
         
         // If crop operation, restore all frames to pre-crop state
         if (isCropOperation && resizeAction.data.allFramesPreviousData) {
-          resizeAction.data.allFramesPreviousData.forEach((frameData: Map<string, any>, index: number) => {
+          resizeAction.data.allFramesPreviousData.forEach((frameData: Map<string, Cell>, index: number) => {
             animationStore.setFrameData(index, frameData);
           });
         }
