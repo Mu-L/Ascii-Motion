@@ -419,14 +419,14 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="default"
+                          variant="secondary"
                           size="sm"
                           className="w-full"
                           onClick={cropToSelection}
                           disabled={!canCrop()}
                         >
                           <Crop className="w-3 h-3 mr-2" />
-                          Crop Canvas to Selection
+                          Crop
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>

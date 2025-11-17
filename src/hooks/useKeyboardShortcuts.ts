@@ -58,16 +58,43 @@ const processHistoryAction = (
     }
     
     case 'canvas_resize': {
-      const resizeAction = action as import('../types').CanvasResizeHistoryAction;
+      const resizeAction = action as any; // Using any to access extended properties
       const canvas = useCanvasStore.getState();
+      
+      // Check if this is a crop operation with all frames data
+      const isCropOperation = resizeAction.data.isCropOperation === true;
+      
       if (isRedo) {
         // Redo: Apply new size
         canvas.setCanvasSize(resizeAction.data.newWidth, resizeAction.data.newHeight);
+        
+        // If crop operation, restore all frames to cropped state
+        if (isCropOperation && resizeAction.data.allFramesNewData) {
+          resizeAction.data.allFramesNewData.forEach((frameData: Map<string, any>, index: number) => {
+            animationStore.setFrameData(index, frameData);
+          });
+        }
+        
+        // Update current canvas to match current frame
+        const currentFrame = animationStore.frames[resizeAction.data.frameIndex];
+        if (currentFrame) {
+          canvas.setCanvasData(currentFrame.data);
+        }
       } else {
         // Undo: Restore previous size and data
         canvas.setCanvasSize(resizeAction.data.previousWidth, resizeAction.data.previousHeight);
+        
+        // If crop operation, restore all frames to pre-crop state
+        if (isCropOperation && resizeAction.data.allFramesPreviousData) {
+          resizeAction.data.allFramesPreviousData.forEach((frameData: Map<string, any>, index: number) => {
+            animationStore.setFrameData(index, frameData);
+          });
+        }
+        
+        // Restore current frame's data
         canvas.setCanvasData(resizeAction.data.previousCanvasData);
       }
+      
       // Set current frame to match the frame this resize was made in
       animationStore.setCurrentFrame(resizeAction.data.frameIndex);
       break;

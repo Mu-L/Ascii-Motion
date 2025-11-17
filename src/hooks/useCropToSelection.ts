@@ -10,7 +10,7 @@ import { cropCanvasToSelection, cropAllFramesToSelection } from '../utils/cropUt
  */
 export function useCropToSelection() {
   const { width: canvasWidth, height: canvasHeight, cells, setCanvasSize, setCanvasData } = useCanvasStore();
-  const { selection, lassoSelection, magicWandSelection, activeTool, pushCanvasResizeHistory } = useToolStore();
+  const { selection, lassoSelection, magicWandSelection, activeTool, pushCanvasResizeHistory, clearSelection, clearLassoSelection, clearMagicWandSelection } = useToolStore();
   const { frames, currentFrameIndex, setFrameData } = useAnimationStore();
 
   /**
@@ -64,10 +64,11 @@ export function useCropToSelection() {
       return;
     }
 
-    // Save previous state for undo
+    // Save previous state for undo - including ALL frames
     const previousWidth = canvasWidth;
     const previousHeight = canvasHeight;
     const previousCells = new Map(cells);
+    const previousAllFramesData = frames.map(frame => new Map(frame.data));
 
     // Crop all frames
     const croppedFrames = cropAllFramesToSelection(frames, selectedCells);
@@ -86,15 +87,37 @@ export function useCropToSelection() {
     setCanvasSize(newWidth, newHeight);
     setCanvasData(croppedCells);
 
-    // Add to history
-    pushCanvasResizeHistory(
-      previousWidth,
-      previousHeight,
-      newWidth,
-      newHeight,
-      previousCells,
-      currentFrameIndex
-    );
+    // Add to history - we'll use a custom approach to store all frames
+    // We'll create a canvas_resize action but extend it with all frames data
+    const action = {
+      type: 'canvas_resize' as const,
+      timestamp: Date.now(),
+      description: `Crop canvas from ${previousWidth}×${previousHeight} to ${newWidth}×${newHeight}`,
+      data: {
+        previousWidth,
+        previousHeight,
+        newWidth,
+        newHeight,
+        previousCanvasData: previousCells,
+        frameIndex: currentFrameIndex,
+        // Store all frames' previous data for crop operations
+        allFramesPreviousData: previousAllFramesData,
+        allFramesNewData: croppedFrames,
+        isCropOperation: true
+      }
+    };
+    
+    // Push to history using the internal method
+    useToolStore.getState().pushToHistory(action as any);
+
+    // Clear the selection after crop
+    if (activeTool === 'select') {
+      clearSelection();
+    } else if (activeTool === 'lasso') {
+      clearLassoSelection();
+    } else if (activeTool === 'magicwand') {
+      clearMagicWandSelection();
+    }
 
     console.log(`Canvas cropped from ${previousWidth}×${previousHeight} to ${newWidth}×${newHeight}`);
   }, [
@@ -104,10 +127,13 @@ export function useCropToSelection() {
     canvasHeight,
     frames,
     currentFrameIndex,
+    activeTool,
     setCanvasSize,
     setCanvasData,
     setFrameData,
-    pushCanvasResizeHistory
+    clearSelection,
+    clearLassoSelection,
+    clearMagicWandSelection
   ]);
 
   return {
