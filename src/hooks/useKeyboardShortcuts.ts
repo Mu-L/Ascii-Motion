@@ -11,6 +11,7 @@ import { useAnimationHistory } from './useAnimationHistory';
 import { usePaletteStore } from '../stores/paletteStore';
 import { useCharacterPaletteStore } from '../stores/characterPaletteStore';
 import { useFlipUtilities } from './useFlipUtilities';
+import { useCropToSelection } from './useCropToSelection';
 import { useProjectFileActions } from './useProjectFileActions';
 import { ANSI_COLORS } from '../constants/colors';
 import type { AnyHistoryAction, CanvasHistoryAction, FrameId } from '../types';
@@ -676,6 +677,9 @@ export const useKeyboardShortcuts = () => {
   
   // Flip utilities for Shift+H and Shift+V
   const { flipHorizontal, flipVertical } = useFlipUtilities();
+  
+  // Crop utility for Cmd+Shift+C / Ctrl+Shift+C
+  const { canCrop, cropToSelection } = useCropToSelection();
 
   // Helper function to handle different types of history actions
   const handleHistoryAction = useCallback((action: AnyHistoryAction, isRedo: boolean) => {
@@ -1160,6 +1164,14 @@ export const useKeyboardShortcuts = () => {
         flipVertical();
         return;
       }
+      if (event.key === 'C' || event.key === 'c') {
+        event.preventDefault();
+        // Crop canvas to selection if there's an active selection
+        if (canCrop()) {
+          cropToSelection();
+        }
+        return;
+      }
       if (event.key === 'O' || event.key === 'o') {
         event.preventDefault();
         toggleOnionSkin();
@@ -1431,6 +1443,8 @@ export const useKeyboardShortcuts = () => {
     deleteFrameRange,
     flipHorizontal,
     flipVertical,
+    canCrop,
+    cropToSelection,
     showSaveProjectDialog,
     showSaveAsDialog,
     showOpenProjectDialog,
