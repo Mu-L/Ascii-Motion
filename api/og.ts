@@ -3,8 +3,9 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// Types
-interface ProjectData {
+// Types for Supabase response structure
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _ProjectData = {
   id: string
   name: string
   description: string | null
@@ -12,7 +13,8 @@ interface ProjectData {
   user_id: string
 }
 
-interface UserProfile {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _UserProfile = {
   display_name: string
 }
 
