@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DraggableDialogBar } from '@/components/common/DraggableDialogBar';
 import { CHARACTER_CATEGORIES } from '@/constants';
@@ -13,7 +15,8 @@ import {
   Navigation, 
   Triangle, 
   Sparkles,
-  Minus
+  Minus,
+  Check
 } from 'lucide-react';
 
 interface EnhancedCharacterPickerProps {
@@ -50,14 +53,16 @@ export const EnhancedCharacterPicker: React.FC<EnhancedCharacterPickerProps> = (
   const [positionOffset, setPositionOffset] = useState({ x: 0, y: 0 });
   const [isDraggingDialog, setIsDraggingDialog] = useState(false);
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
+  const [customCharacter, setCustomCharacter] = useState('');
   const dragStartOffsetRef = useRef({ x: 0, y: 0 });
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Reset position offset and drag state when dialog opens
+  // Reset position offset, drag state, and custom character when dialog opens
   useEffect(() => {
     if (isOpen) {
       setPositionOffset({ x: 0, y: 0 });
       setHasBeenDragged(false);
+      setCustomCharacter('');
     }
   }, [isOpen]);
 
@@ -94,6 +99,38 @@ export const EnhancedCharacterPicker: React.FC<EnhancedCharacterPickerProps> = (
   const handleCharacterSelect = (character: string) => {
     onSelectCharacter(character);
     onClose();
+  };
+  
+  // Handler for custom character input
+  const handleCustomCharacterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Sanitize to single character - take first character only
+    const sanitized = value.charAt(0);
+    setCustomCharacter(sanitized);
+  };
+  
+  // Handler for custom character paste
+  const handleCustomCharacterPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    // Sanitize to single character - take first character only
+    const sanitized = pastedText.charAt(0);
+    setCustomCharacter(sanitized);
+  };
+  
+  // Handler for confirming custom character
+  const handleConfirmCustomCharacter = () => {
+    if (customCharacter) {
+      handleCharacterSelect(customCharacter);
+    }
+  };
+  
+  // Handler for Enter key in custom character input
+  const handleCustomCharacterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && customCharacter) {
+      e.preventDefault();
+      handleConfirmCustomCharacter();
+    }
   };
   
   // Handler for dragging the dialog
@@ -263,6 +300,43 @@ export const EnhancedCharacterPicker: React.FC<EnhancedCharacterPickerProps> = (
                       </TooltipContent>
                     </Tooltip>
                   ))}
+                </TooltipProvider>
+              </div>
+            </div>
+            
+            {/* Custom Character Input */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label htmlFor="custom-char" className="text-xs text-muted-foreground">
+                Or enter custom character:
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="custom-char"
+                  type="text"
+                  value={customCharacter}
+                  onChange={handleCustomCharacterChange}
+                  onPaste={handleCustomCharacterPaste}
+                  onKeyDown={handleCustomCharacterKeyDown}
+                  placeholder="Type or paste..."
+                  className="flex-1 font-mono text-center"
+                  maxLength={1}
+                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleConfirmCustomCharacter}
+                        disabled={!customCharacter}
+                        size="sm"
+                        className="px-3"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Confirm character</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </TooltipProvider>
               </div>
             </div>
