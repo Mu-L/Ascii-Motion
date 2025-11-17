@@ -613,7 +613,7 @@ export const CanvasOverlay: React.FC = () => {
             ctx.fillStyle = cell.color || '#000000';
             // Use the same font as the main canvas for 1:1 preview
             const scaledFontSize = fontMetrics.fontSize * zoom;
-            ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+            ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(
@@ -660,7 +660,7 @@ export const CanvasOverlay: React.FC = () => {
           if (cell.char && cell.char !== ' ') {
             ctx.fillStyle = cell.color || '#000000';
             const scaledFontSize = fontMetrics.fontSize * zoom;
-            ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+            ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(
@@ -698,7 +698,7 @@ export const CanvasOverlay: React.FC = () => {
         if (cell.char && cell.char !== ' ') {
           ctx.fillStyle = cell.color || '#ffffff';
           const scaledFontSize = fontMetrics.fontSize * zoom;
-          ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+          ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
@@ -732,7 +732,7 @@ export const CanvasOverlay: React.FC = () => {
         if (cell.char && cell.char !== ' ') {
           ctx.fillStyle = cell.color || '#000000';
           const scaledFontSize = fontMetrics.fontSize * zoom;
-          ctx.font = `${scaledFontSize}px '${fontMetrics.fontFamily}', monospace`;
+          ctx.font = `${scaledFontSize}px ${fontMetrics.fontFamily}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(

@@ -15,6 +15,7 @@ import { useCharacterPaletteStore } from '../../stores/characterPaletteStore';
 import { useAnimationStore } from '../../stores/animationStore';
 import { usePaletteStore } from '../../stores/paletteStore';
 import { generateBezierPreview } from '../../utils/bezierFillUtils';
+import { BezierActionButtons } from './BezierActionButtons';
 import type { 
   BezierCommitHistoryAction,
   BezierAddPointHistoryAction,
@@ -1528,23 +1529,26 @@ export const InteractiveBezierOverlay: React.FC = () => {
   }
 
   return (
-    <div
-      ref={overlayRef}
-      className={`pointer-events-auto ${cursorClass}`}
-  onPointerDown={handlePointerDown}
-  onPointerMove={handlePointerMove}
-  onPointerUp={handlePointerUp}
-      style={containerStyle}
-    >
-      <svg 
-        className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: 'none', overflow: 'visible' }}
+    <>
+      <div
+        ref={overlayRef}
+        className={`pointer-events-auto ${cursorClass}`}
+    onPointerDown={handlePointerDown}
+    onPointerMove={handlePointerMove}
+    onPointerUp={handlePointerUp}
+        style={containerStyle}
       >
-        <g transform={`translate(${svgOffsetRef.current.x}, ${svgOffsetRef.current.y})`}>
-          {pathElement}
-          {controlsElement}
-        </g>
-      </svg>
-    </div>
+        <svg 
+          className="absolute inset-0 w-full h-full"
+          style={{ pointerEvents: 'none', overflow: 'visible' }}
+        >
+          <g transform={`translate(${svgOffsetRef.current.x}, ${svgOffsetRef.current.y})`}>
+            {pathElement}
+            {controlsElement}
+          </g>
+        </svg>
+      </div>
+      <BezierActionButtons onAccept={handleCommit} onCancel={handleCancel} />
+    </>
   );
 };
