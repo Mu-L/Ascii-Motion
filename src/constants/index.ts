@@ -15,6 +15,7 @@ export const PANEL_ANIMATION = {
 
 export const CHARACTER_CATEGORIES = {
   "Basic Text": [
+    ' ', // Space character - useful for clearing/blank cells in palettes
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
