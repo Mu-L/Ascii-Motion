@@ -455,7 +455,7 @@ const createDefaultState = (): BezierStoreState => ({
   draggingPointId: null,
   draggingHandleId: null,
   remountKey: 0,
-  fillMode: 'constant',
+  fillMode: 'palette',
   autofillPaletteId: 'block',
   fillColorMode: 'current',
   strokeWidth: 1.0,
@@ -1181,7 +1181,7 @@ export const useBezierStore = create<BezierStore>((set, get) => ({
       autofillPaletteId: state.sessionSettings.autofillPaletteId,
       fillColorMode: state.sessionSettings.fillColorMode,
     } : {
-      fillMode: 'constant' as const,
+      fillMode: 'palette' as const,
       autofillPaletteId: 'block',
       fillColorMode: 'current' as const,
     };

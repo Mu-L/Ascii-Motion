@@ -414,15 +414,15 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                   {/* Bezier Shape Tool Options */}
                   {effectiveTool === 'beziershape' && (
                     <div className="space-y-3">
-                      {/* Fill Mode Selector */}
+                      {/* Character Mode Selector */}
                       <div className="space-y-2">
                         <Label htmlFor="fill-mode" className="text-xs text-muted-foreground">
-                          Fill Mode:
+                          Character Mode:
                         </Label>
                         <Select value={fillMode} onValueChange={(value) => setFillMode(value as 'constant' | 'palette' | 'autofill')}>
                           <SelectTrigger id="fill-mode" className="w-full h-8 text-xs [&>span]:text-left">
-                            <SelectValue placeholder="Select fill mode...">
-                              {fillMode === 'constant' && 'Constant'}
+                            <SelectValue placeholder="Select character mode...">
+                              {fillMode === 'constant' && 'Selection'}
                               {fillMode === 'palette' && 'Palette'}
                               {fillMode === 'autofill' && 'Autofill'}
                             </SelectValue>
@@ -430,20 +430,20 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                           <SelectContent align="start">
                             <SelectItem value="constant" className="text-xs">
                               <div className="flex flex-col">
-                                <span className="font-medium">Constant</span>
-                                <span className="text-muted-foreground text-[10px]">Fill with current character</span>
+                                <span className="font-medium">Selection</span>
+                                <span className="text-muted-foreground text-[10px]">Fill with current selected color</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="palette" className="text-xs">
                               <div className="flex flex-col">
                                 <span className="font-medium">Palette</span>
-                                <span className="text-muted-foreground text-[10px]">Fill with palette characters</span>
+                                <span className="text-muted-foreground text-[10px]">Map current character palette to shape</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="autofill" className="text-xs">
                               <div className="flex flex-col">
                                 <span className="font-medium">Autofill</span>
-                                <span className="text-muted-foreground text-[10px]">Intelligent character selection</span>
+                                <span className="text-muted-foreground text-[10px]">Smart character selection from preset</span>
                               </div>
                             </SelectItem>
                           </SelectContent>
@@ -476,14 +476,14 @@ export const ToolPalette: React.FC<ToolPaletteProps> = ({ className = '' }) => {
                         </div>
                       )}
                       
-                      {/* Fill Color Mode Selector */}
+                      {/* Color Mode Selector */}
                       <div className="space-y-2">
                         <Label htmlFor="fill-color-mode" className="text-xs text-muted-foreground">
-                          Fill Color:
+                          Color Mode:
                         </Label>
                         <Select value={fillColorMode} onValueChange={(value) => setFillColorMode(value as 'current' | 'palette')}>
                           <SelectTrigger id="fill-color-mode" className="w-full h-8 text-xs [&>span]:text-left">
-                            <SelectValue placeholder="Select fill color mode...">
+                            <SelectValue placeholder="Select color mode...">
                               {fillColorMode === 'current' && 'Current Color'}
                               {fillColorMode === 'palette' && 'Palette'}
                             </SelectValue>
