@@ -1,12 +1,19 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.44";
-export const BUILD_DATE = "2025-11-18T19:39:07.735Z";
-export const BUILD_HASH = "23352c7";
+export const VERSION = "0.2.45";
+export const BUILD_DATE = "2025-11-18T20:42:32.866Z";
+export const BUILD_HASH = "3b0d4ae";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.45",
+    "date": "2025-11-18T20:42:32.866Z",
+    "commits": [
+      "Fix palette issue for bezier tools"
+    ]
+  },
   {
     "version": "0.2.44",
     "date": "2025-11-18T19:39:07.735Z",
