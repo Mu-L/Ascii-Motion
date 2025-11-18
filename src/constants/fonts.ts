@@ -81,10 +81,30 @@ export const MONOSPACE_FONTS: MonospaceFont[] = [
     fileSize: '~101KB'
   },
   {
+    id: 'monaspace-neon',
+    name: 'Monaspace Neon',
+    displayName: 'Monaspace (GitHub)',
+    cssStack: 'Monaspace Neon, monospace',
+    category: 'web',
+    description: 'GitHub\'s texture healing monospace font',
+    isBundled: true,
+    fileSize: '~43KB'
+  },
+  {
+    id: 'geist-mono',
+    name: 'Geist Mono',
+    displayName: 'Geist Mono (Vercel)',
+    cssStack: 'Geist Mono, monospace',
+    category: 'web',
+    description: 'Vercel\'s modern geometric monospace font',
+    isBundled: true,
+    fileSize: '~41KB'
+  },
+  {
     id: 'auto',
     name: 'Auto',
     displayName: 'Auto (Best Available)',
-    cssStack: 'SF Mono, Monaco, Cascadia Code, Consolas, Courier New, monospace',
+    cssStack: 'SF Mono, Monaco, Cascadia Code, Consolas, JetBrains Mono, Fira Code, Monaspace Neon, Geist Mono, Courier New, monospace',
     category: 'system',
     description: 'Automatically selects the best available monospace font for your system'
   }

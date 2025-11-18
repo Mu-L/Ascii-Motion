@@ -18,6 +18,12 @@ const BUNDLED_FONT_FILES: Record<string, { url: string; weight?: number; style?:
   ],
   'Fira Code': [
     { url: '/fonts/FiraCode-Regular.woff2', weight: 400, style: 'normal' }
+  ],
+  'Monaspace Neon': [
+    { url: '/fonts/MonaspaceNeon-Regular.woff2', weight: 400, style: 'normal' }
+  ],
+  'Geist Mono': [
+    { url: '/fonts/GeistMono-Regular.woff2', weight: 400, style: 'normal' }
   ]
 };
 

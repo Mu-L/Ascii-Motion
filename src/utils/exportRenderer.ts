@@ -221,7 +221,7 @@ export class ExportRenderer {
       svg += '  <g id="content">\n';
 
       // Font stack is already properly formatted (no quotes) from fontMetrics
-      const fontStack = data.fontMetrics?.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, Roboto Mono, Inconsolata, Courier New, monospace';
+      const fontStack = data.fontMetrics?.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, JetBrains Mono, Fira Code, Monaspace Neon, Geist Mono, Courier New, monospace';
 
       // Render each cell
       let cellCount = 0;
@@ -1272,7 +1272,7 @@ export class ExportRenderer {
       const framesJson = JSON.stringify(framesPayload, null, 2);
       // Font stack is already properly formatted (no quotes) from fontMetrics
       const fontStack =
-        data.fontMetrics?.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, Roboto Mono, Inconsolata, Courier New, monospace';
+        data.fontMetrics?.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, JetBrains Mono, Fira Code, Monaspace Neon, Geist Mono, Courier New, monospace';
 
       this.updateProgress('Generating component code...', 60);
 
@@ -1895,7 +1895,7 @@ export class ExportRenderer {
     // Setup font for text rendering using actual typography settings
     const exportFontSize = actualFontSize * sizeMultiplier;
     // Font stack is already properly formatted (no quotes) from fontMetrics
-    const fontStack = fontMetrics.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, Roboto Mono, Inconsolata, Courier New, monospace';
+    const fontStack = fontMetrics.fontFamily || 'SF Mono, Monaco, Cascadia Code, Consolas, JetBrains Mono, Fira Code, Monaspace Neon, Geist Mono, Courier New, monospace';
     ctx.font = `${exportFontSize}px ${fontStack}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
