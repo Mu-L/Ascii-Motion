@@ -87,6 +87,14 @@
   scrollbar-gutter: stable both-edges;
 }
 
+/* For horizontal scrollbars, reserve space at the bottom to prevent layout shift */
+.scrollbar-gutter-horizontal {
+  /* Reserve space for horizontal scrollbar (6px height + small margin) */
+  padding-bottom: 8px;
+  /* Ensure minimum height includes scrollbar space */
+  min-height: fit-content;
+}
+
 :root {
   --ascii-logo-font-size: 6px;
   --ascii-logo-line-height: 1.1;
