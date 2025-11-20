@@ -7902,7 +7902,8 @@ export const AsciiMotionLogo: React.FC<AsciiMotionLogoProps> = ({
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     // Set up rendering context with proper font stack
-    ctx.font = `${fontSize}px "SF Mono", Monaco, "Cascadia Code", Consolas, "Courier New", monospace`;
+    // Safari Canvas bug: adding 'monospace' fallback causes SF Mono to be ignored
+    ctx.font = `${fontSize}px 'SF Mono', 'Cascadia Code', Consolas, 'Courier New'`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
 

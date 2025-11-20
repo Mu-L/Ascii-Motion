@@ -1,12 +1,32 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.45";
-export const BUILD_DATE = "2025-11-18T20:42:32.866Z";
-export const BUILD_HASH = "3b0d4ae";
+export const VERSION = "0.2.46";
+export const BUILD_DATE = "2025-11-20T08:27:22.285Z";
+export const BUILD_HASH = "1acb7b4";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.46",
+    "date": "2025-11-20T08:27:22.285Z",
+    "commits": [
+      "Cleaned up some lint errors",
+      "Updated remap color effect to use palettes",
+      "feat(effects): Add Reset button to Palette tab",
+      "feat(effects): Implement complete Use Palette tab UI",
+      "feat(effects): Add tab structure for palette-based color remapping",
+      "feat(effects): Add palette-based color remapping infrastructure",
+      "Fixed tooltip bug",
+      "Added gutter to sidepanels to prevent layout shift for scrollbars",
+      "Fix horizontal scrollbar layout shift in timeline with padding approach",
+      "Add scrollbar-gutter CSS to prevent layout shift in panels",
+      "Initial analysis and planning",
+      "Initial plan",
+      "Removed old artifacts",
+      "Update version"
+    ]
+  },
   {
     "version": "0.2.45",
     "date": "2025-11-18T20:42:32.866Z",

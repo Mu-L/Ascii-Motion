@@ -151,15 +151,21 @@ export const useWelcomeDialog = () => {
 
   /**
    * Reset welcome dialog state
-   * Clears localStorage so welcome dialog will show again on next page load
+   * Clears localStorage and forces the dialog to open immediately
+   * Used when user selects "Show Welcome Screen" from hamburger menu
    */
   const resetWelcomeState = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-      // Reset the checked flag so it can run again
+      // Reset the checked flag so useEffect can run on next mount
       setHasChecked(false);
-      // Show the dialog immediately
-      setIsOpen(true);
+      // Reset dontShowAgain state
+      setDontShowAgain(false);
+      // Force the dialog open immediately (bypasses useEffect guard)
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        setIsOpen(true);
+      }, 0);
     } catch (error) {
       console.error('Failed to reset welcome state:', error);
     }
