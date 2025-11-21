@@ -1,12 +1,21 @@
 // Auto-generated version file - DO NOT EDIT MANUALLY
 // This file is updated by scripts/version-bump.js during deployment
 
-export const VERSION = "0.2.47";
-export const BUILD_DATE = "2025-11-20T19:58:54.867Z";
-export const BUILD_HASH = "af4a59a";
+export const VERSION = "0.2.48";
+export const BUILD_DATE = "2025-11-21T06:46:28.402Z";
+export const BUILD_HASH = "bc34012";
 
 // Version history with commit messages
 export const VERSION_HISTORY = [
+  {
+    "version": "0.2.48",
+    "date": "2025-11-21T06:46:28.402Z",
+    "commits": [
+      "Fixed community gallery's font rendering so that font choice is repsected",
+      "Fixed typography mismatch during playback bug",
+      "Fixed scrollbar safari bugs"
+    ]
+  },
   {
     "version": "0.2.47",
     "date": "2025-11-20T19:58:54.867Z",
